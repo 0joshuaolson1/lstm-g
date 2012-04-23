@@ -1,0 +1,8 @@
+input->input node activations (no connections)
+generally all non-input units biased
+gated connection use most recent gater activation for gain calc
+http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf (remember to cite [a neural network journal])
+let him know if have question or do cool thing
+
+see bias info in http://www.felixgers.de/papers/phd.pdf
+allow setting of initial state
