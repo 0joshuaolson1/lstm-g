@@ -31,7 +31,7 @@ Discussion
 
 While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user. Currently, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; there are no functions yet to build a standard network automatically, and Derek Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections.
 
-Don't take this to court, but it might be fine to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass. On the other hand, error information is currently updated whether in training or testing. Also related to error, there are currently no functions to calculate error; there are different ways to do so, but none of them were necessary to implement the learning algorithm.
+Don't take this to court, but it might be fine to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass. On the other hand, error information is currently updated whether in training or testing. Also related to error, there are currently no functions to calculate error; there are different ways to do so, but none of them were necessary to implement the learning algorithm. Neither are there functions for momentum, alpha stepping, bagging, boosting, or any of that. There's a lot more that could be done...
 
 Code-level documentation and efficiency are hopefully in the future, as will as ports to Java and C. Any others? (languages or contributors, either way :) )
 
