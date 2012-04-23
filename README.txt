@@ -23,7 +23,7 @@ arr[0] = {j, i: [w, gater, epsilon]}
 arr[1] = {j: [s, y, f, gated = [], sigma, sigma_p, sigma_g]}
 arr[2] = {j, i, k: epsilon_k}
 
-arr[0][j, i] for tuple i, j gives (an array with) the weight, gater (-1 if none), and value of epsilon (for the learning algorithm) for the given connection from node i to node j. arr[1][j] gives the state, activation, function index, array of nodes it gates (possibly empty, usually no larger than length 1), and sigma, sigma_p, and sigma_g for the learning algorithm. arr[2][j, i, k] gives the learning algorithm's epsilon_k for when node i connects to node j and j gates a connection to k.
+arr[0][j, i] for tuple j, i gives (an array with) the weight, gater (-1 if none), and value of epsilon (for the learning algorithm) for the given connection from node i to node j. arr[1][j] gives the state, activation, function index, array of nodes that node j gates (possibly empty, usually no larger than length 1), and sigma, sigma_p, and sigma_g for the learning algorithm. arr[2][j, i, k] gives the learning algorithm's epsilon_k for when node i connects to node j and j gates one or more connections to k.
 
 fwd(ar2, dat) takes a network array and returns the array after one time step given an array of input data, dat. bwd(ar2, dat, lrn) takes a network array and returns the array after one backwards-pass weight modification given the target output data array, dat, and the learning rate, lrn. For dat's length, n, the activations of the last n nodes are treated as the network's output for a time step. The learning algorithm assumes that all data points for both input and output are in the range [0, 1].
 
