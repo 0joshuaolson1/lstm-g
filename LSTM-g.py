@@ -93,7 +93,7 @@ class LSTM_g:
         if (k, k) in getConnections():
             setEpsilonK(j, i, k, getEpsilonK(j, i, k) * gain(k, k) * getWeight(k, k))
             if (k, k) in getGatedArray(j):
-                getEpsilonK(j, i, k, getEpsilonK(j, i, k) + getFuncs()[getFuncindex(j)](getState(j), DERIV_MODE) * getEpsilon(j, i) * getWeight(k, k) * getState(k))
+                setEpsilonK(j, i, k, getEpsilonK(j, i, k) + getFuncs()[getFuncindex(j)](getState(j), DERIV_MODE) * getEpsilon(j, i) * getWeight(k, k) * getState(k))
         else:
             setEpsilonK(j, i, k, 0)
         for p, a in getGatedArray(j):
