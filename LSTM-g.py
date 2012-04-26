@@ -141,7 +141,7 @@ class LSTM_g:
             if len(args) < 4:
                 setState(args[0], args[1])
                 setAct(args[0], args[1])
-                setFuncIndex(args[0], getFuncs()[args[2]](args[1], VALUE_MODE))
+                setFuncIndex(args[0], args[2])
                 setGatedArray(args[0], [])
                 setDelta(args[0], 0)
                 setDeltaP(args[0], 0)
