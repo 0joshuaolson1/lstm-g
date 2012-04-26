@@ -4,36 +4,38 @@ Among artificial neural networks, the recurrent Long Short-Term Memory (LSTM) ar
 
 Code
 
-This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Some algorithmic details are still vague, so communication with him will be ongoing before this is ready for debugging (and no longer so rough :) ), but all of the details known so far should be in Algorithm.png and Notes.txt.
+This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Some algorithmic details are still vague, so communication with him will be ongoing before this is ready for debugging, but all of the details known so far should be in Algorithm.png and Notes.txt.
 
 Usage
 
-LSTM-g.py is currently stateless. lsm(fmt) takes a string and outputs an array, while str(arr) does the opposite. A string defines the activation functions for each node and the weights and optional gating nodes for each connection, and is of the format:
+The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and is of the format:
 
-j fnx_index
+j s fnx_index
 ...
 j i w gater
 ...
 
-In the first sub-list, j is the index of a node and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices. In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The order in which connections are defined does not matter. The learning algorithm assumes that the first n nodes (whose activations will come directly from an input data array of length n) have no incoming connections, that no node gates its self-connection, and that the weight of any self-connection is 1.
+In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices. In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The order in which connections are defined does not matter. The learning algorithm assumes that the first n nodes (whose activations will come directly from an input data array of length n) have no incoming connections, that no node gates its self-connection, and that the weight of any self-connection is 1.
 
-An array contains the operable and more complete state of the network in the following format:
+toString() return a string of the same format, specifying the current state, function choices, and topology of the network.
 
-arr[0] = {j, i: [w, gater, epsilon]}
-arr[1] = {j: [s, y, f, gated = [], sigma, sigma_p, sigma_g]}
-arr[2] = {j, i, k: epsilon_k}
+step(input) takes an array of input data and propagates the input nodes' activations through the network for a single time step. It is the user's responsibility to ensure that the input array's length is consistent with the intended number of input nodes.
 
-arr[0][j, i] for tuple i, j gives (an array with) the weight, gater (-1 if none), and value of epsilon (for the learning algorithm) for the given connection from node i to node j. arr[1][j] gives the state, activation, function index, array of nodes it gates (possibly empty, usually no larger than length 1), and sigma, sigma_p, and sigma_g for the learning algorithm. arr[2][j, i, k] gives the learning algorithm's epsilon_k for when node i connects to node j and j gates a connection to k.
+getOutput(length) takes the intended number of output data elements and returns an array of the most recent activations of that number of nodes.
 
-fwd(ar2, dat) takes a network array and returns the array after one time step given an array of input data, dat. bwd(ar2, dat, lrn) takes a network array and returns the array after one backwards-pass weight modification given the target output data array, dat, and the learning rate, lrn. For dat's length, n, the activations of the last n nodes are treated as the network's output for a time step. The learning algorithm assumes that all data points for both input and output are in the range [0, 1].
+adjust(target, learnRate) modifies the network's weights according to the current target output array and the real learning rate.
+
+The learning algorithm assumes that all data points for both input and output are in the range [0, 1]. To incorporate bias inputs into training (one suggestion is to bias all non-input units), always include an input data point of value 1 and dedicate an input node to share that value with other nodes.
 
 Discussion
 
 While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user. Currently, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; there are no functions yet to build a standard network automatically, and Derek Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections.
 
-Don't take this to court, but it might be fine to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass. On the other hand, error information is currently updated whether in training or testing. Also related to error, there are currently no functions to calculate error; there are different ways to do so, but none of them were necessary to implement the learning algorithm.
+It is possible to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass.
 
-Code-level documentation and efficiency are hopefully in the future, as will as ports to Java and C. Any others? (languages or contributors, either way :) )
+There are currently no functions to calculate error; there are different ways to do so, but none of them are necessary to implement the learning algorithm. Neither are there functions for batch training, momentum, alpha stepping, bagging, boosting, or any of that. There's a lot more that could be done...
+
+One long-term goal of this library is efficiency. The current Python code is intended to be functional, but it is also meant to be directly illustrative of the definition of Generalized LSTM as found in the paper referenced above. Strictly speaking, the fastest platform-independent library implementation would probably be a program that generates a C/C++ header file with a hard-coded network and a look-up table for activation functions. However, an almost equally efficient but more flexible solution would run as an application with a API through TCP sockets.
 
 Idea
 
