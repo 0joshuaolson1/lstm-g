@@ -19,13 +19,13 @@ In the first sub-list, j is the integer index of a node, s is the real state, an
 
 toString() return a string of the same format, specifying the current state, function choices, and topology of the network.
 
-step(input) takes an array of input data and propagates the input nodes' activations through the network for a single time step. It is the user's responsibility to ensure that the input array's length is consistent with the intended number of input nodes.
+step(input, mode) takes an array of input data and propagates the input nodes' activations through the network for a single time step. It is the user's responsibility to ensure that the input array's length is consistent with the intended number of input nodes. If the mode is TRAIN_MODE, then eligibility traces that are used in the adjust method (explained below) are updated. Such calculations are skipped if the mode is TEST_MODE.
 
 getOutput(length) takes the intended number of output data elements and returns an array of the most recent activations of that number of nodes.
 
 adjust(target, learnRate) modifies the network's weights according to the current target output array and the real learning rate.
 
-The learning algorithm assumes that all data points for both input and output are in the range [0, 1]. To incorporate bias inputs into training (one suggestion is to bias all non-input units), always include an input data point of value 1 and dedicate an input node to share that value with other nodes.
+The learning algorithm assumes that all data points for output are in the range [0, 1]. To incorporate bias inputs (one suggestion is to bias all non-input units), always include an input data point of value 1 and dedicate an input node to share that value with other nodes.
 
 Discussion
 
@@ -35,7 +35,7 @@ It is possible to perform multiple input-to-output forward passes between backwa
 
 There are currently no functions to calculate error; there are different ways to do so, but none of them are necessary to implement the learning algorithm. Neither are there functions for batch training, momentum, alpha stepping, bagging, boosting, or any of that. There's a lot more that could be done...
 
-One long-term goal of this library is efficiency. The current Python code is intended to be functional, but it is also meant to be directly illustrative of the definition of Generalized LSTM as found in the paper referenced above. Strictly speaking, the fastest platform-independent library implementation would probably be a program that generates a C/C++ header file with a hard-coded network and a look-up table for activation functions. However, an almost equally efficient but more flexible solution would run as an application with a API through TCP sockets.
+One long-term goal of this library is efficiency. The current Python code is intended to be functional, but it is also meant to be directly illustrative of the definition of Generalized LSTM as found in the paper referenced above. Strictly speaking, the fastest platform-independent library implementation would probably be a program that generates a C/C++ header file with a hard-coded network and optimized activation function approximations. However, an almost equally efficient but more flexible solution would run as an application with a API through TCP sockets.
 
 Idea
 
