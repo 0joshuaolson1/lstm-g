@@ -166,19 +166,19 @@ class LSTM_g:
         for j, i in self.getConnections():
             for k, l in self.getGatedArray(j):
                 self.initEpsilonK(j, i, k)
-    def makeStandardSpec(self, archSpec):
+    def makeStandardSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
         netSpec = ""
         
         return netSpec
-    def makePeepholeSpec(self, archSpec):
+    def makePeepholeSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
         netSpec = ""
         
         return netSpec
-    def makeUngatedSpec(self, archSpec):
+    def makeUngatedSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
         netSpec = ""
         
         return netSpec
-    def makeTwoStageSpec(self, archSpec):
+    def makeTwoStageSpec(self, inputLayerSize, firstMemoryLayerSize, secondMemoryLayerSize, outputLayerSize):
         netSpec = ""
         
         return netSpec
@@ -190,13 +190,13 @@ class LSTM_g:
             return
         archSpec = lines[0].split(" ")
         if archSpec[0] == "Standard":
-            self.initialize(self.makeStandardSpec(archSpec[1:]).split("\n"))
+            self.initialize(self.makeStandardSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
         if archSpec[0] == "Peephole":
-            self.initialize(self.makePeepholeSpec(archSpec[1:]).split("\n"))
+            self.initialize(self.makePeepholeSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
         if archSpec[0] == "Ungated":
-            self.initialize(self.makeUngatedSpec(archSpec[1:]).split("\n"))
+            self.initialize(self.makeUngatedSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
         if archSpec[0] == "TwoStage":
-            self.initialize(self.makeTwoStageSpec(archSpec[1:]).split("\n"))
+            self.initialize(self.makeTwoStageSpec(archSpec[0], archSpec[1], archSpec[2], archSpec[3]).split("\n"))
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
