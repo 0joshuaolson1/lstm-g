@@ -206,10 +206,10 @@ class LSTM_g:
                 if (j, i) in self.getConnections():
                     netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i))
         return netSpec[1:]
-    def step(self, input, mode):
-        for j in input:
-            self.setAct(j, input[j])
-        for j in range(len(input), len(input[1])):
+    def step(self, inputs, mode):
+        for j in range(len(inputs)):
+            self.setAct(j, inputs[j])
+        for j in range(len(inputs), len(self.getNodes()):
             self.calcState(j)
             self.setAct(j, self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.VALUE_MODE))
             if mode == self.TRAIN_MODE:
