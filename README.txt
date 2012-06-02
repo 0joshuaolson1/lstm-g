@@ -4,20 +4,28 @@ Among artificial neural networks, the recurrent Long Short-Term Memory (LSTM) ar
 
 Code
 
-This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Some algorithmic details are still vague, so communication with him will be ongoing before this is ready for debugging, but all of the details known so far should be in Algorithm.png and Notes.txt.
+This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Currently, code to automatically build the four architectures in the paper is in the works, and will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
 
 Usage
 
-The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and is of the format:
+The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal deltas and epsilons related to training. It is of the format:
 
-j s fnx_index
+j s fnx_index delta delta_p delta_g
 ...
-j i w gater
+j i w gater epsilon
+...
+j i k epsilon_k
 ...
 
-In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices. In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The order in which connections are defined does not matter. The learning algorithm assumes that the first n nodes (whose activations will come directly from an input data array of length n) have no incoming connections, that no node gates its self-connection, and that the weight of any self-connection is 1.
+In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. The values of the deltas are only important if the network will be trained, in which case they would have been obtained with the toString method explained hereafter. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
 
-toString() return a string of the same format, specifying the current state, function choices, and topology of the network.
+In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The values of the epsilons (and epsilon_ks, addressed below) are likewise important only for future training. The order in which connections are defined does not matter.
+
+In the third sub-list, again immediately following, an epsilon_k must be provided for each combination of nodes j, i, and k, where there is a connection from i to j and j gates a connection into k.
+
+The learning algorithm assumes that the first n nodes (whose activations will come directly from an input data array of length n) have no incoming connections, that no node gates its self-connection, and that the weight of any self-connection is 1.
+
+toString() returns a string of the same format, specifying the current state, function choices, deltas/epsilons, and topology of the network.
 
 step(input, mode) takes an array of input data and propagates the input nodes' activations through the network for a single time step. It is the user's responsibility to ensure that the input array's length is consistent with the intended number of input nodes. If the mode is TRAIN_MODE, then eligibility traces that are used in the adjust method (explained below) are updated. Such calculations are skipped if the mode is TEST_MODE.
 
@@ -29,7 +37,7 @@ The learning algorithm assumes that all data points for output are in the range 
 
 Discussion
 
-While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user. Currently, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; there are no functions yet to build a standard network automatically, and Derek Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections.
+While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user. Until the functions for automatically building certain architectures are complete, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; note that D. Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections.
 
 It is possible to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass.
 
