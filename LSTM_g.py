@@ -27,8 +27,6 @@ class LSTM_g:
         self.net[0][j] = [0, 0, 0, [], 0, 0, 0]
     def initConnection(self, j, i):
         self.net[1][j, i] = [0, 0, 0]
-    def initEpsilonK(self, j, i, k):
-        self.net[2][j, i, k] = 0
 
     def getState(self, j):
         return self.net[0][j][0]
@@ -136,6 +134,7 @@ class LSTM_g:
             m = -1
             for k, l in self.getGatedArray(j):
                 if m != k and k > j:
+                    m = k
                     self.setWeight(j, i, self.getWeight(j, i) + learnRate * self.getDelta(k) * self.getEpsilonK(j, i, k))
 
     def initialize(self, netSpec):
@@ -146,26 +145,25 @@ class LSTM_g:
         self.initNet()
         for line in netSpec:
             args = line.split(" ")
-            args[0] = int(args[0])
-            args[len(args)-2] = float(args[len(args)-2])
-            args[len(args)-1] = int(args[len(args)-1])
-            if len(args) < 4:
-                self.initNode(args[0])
-                self.setState(args[0], args[1])
-                self.setAct(args[0], self.getFuncs()[args[2]](args[1], self.VALUE_MODE))
-                self.setFuncIndex(args[0], args[2])
+            if len(args) > 5:
+                self.initNode(int(args[0]))
+                self.setState(int(args[0]), float(args[1]))
+                self.setAct(int(args[0]), self.getFuncs()[int(args[2])](float(args[1]), self.VALUE_MODE))
+                self.setFuncIndex(int(args[0]), int(args[2]))
+                self.setDelta(int(args[0]), float(args[3]))
+                self.setDeltaP(int(args[0]), float(args[4]))
+                self.setDeltaG(int(args[0]), float(args[5]))
+            elif len(args) > 4:
+                self.initConnection(int(args[0]), int(args[1]))
+                self.setWeight(int(args[0]), int(args[1]), float(args[2]))
+                self.setGater(int(args[0]), int(args[1]), int(args[3]))
+                if int(args[3]) > -1:
+                    gatedArray = self.getGatedArray(int(args[3]))
+                    gatedArray.append(int(args[0]), int(args[1]))
+                    self.setGatedArray(int(args[3]), gatedArray)
+                self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
             else:
-                args[1] = int(args[1])
-                self.initConnection(args[0], args[1])
-                self.setWeight(args[0], args[1], args[2])
-                self.setGater(args[0], args[1], args[3])
-                if args[3] > -1:
-                    gatedArray = self.getGatedArray(args[3])
-                    gatedArray.append((args[0], args[1]))
-                    self.setGatedArray(args[3], gatedArray)
-        for j, i in self.getConnections():
-            for k, l in self.getGatedArray(j):
-                self.initEpsilonK(j, i, k)
+                self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
     def makeStandardSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
         netSpec = ""
         
@@ -200,11 +198,17 @@ class LSTM_g:
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
-            netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j))
+            netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j)) + " " + str(self.getDelta(j)) + " " + str(self.getDeltaP(j)) + " " + str(self.getDeltaG(j))
         for i in self.getNodes():
             for j in self.getNodes():
                 if (j, i) in self.getConnections():
-                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i))
+                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i)) + " " + str(self.getEpsilon(j, i))
+        m = -1
+        for j, i in self.getConnections():
+            for k, l in self.getGatedArray(j):
+                if m != k:
+                    m = k
+                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " " + str(self.getEpsilonK(j, i, k))
         return netSpec[1:]
     def step(self, inputs, mode):
         for j in range(len(inputs)):
