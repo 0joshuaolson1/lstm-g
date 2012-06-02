@@ -188,13 +188,13 @@ class LSTM_g:
             return
         archSpec = lines[0].split(" ")
         if archSpec[0] == "Standard":
-            self.initialize(self.makeStandardSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
+            self.initialize(self.makeStandardSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
         if archSpec[0] == "Peephole":
-            self.initialize(self.makePeepholeSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
+            self.initialize(self.makePeepholeSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
         if archSpec[0] == "Ungated":
-            self.initialize(self.makeUngatedSpec(archSpec[0], archSpec[1], archSpec[2]).split("\n"))
+            self.initialize(self.makeUngatedSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
         if archSpec[0] == "TwoStage":
-            self.initialize(self.makeTwoStageSpec(archSpec[0], archSpec[1], archSpec[2], archSpec[3]).split("\n"))
+            self.initialize(self.makeTwoStageSpec(archSpec[1], archSpec[2], archSpec[3], archSpec[4]).split("\n"))
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
