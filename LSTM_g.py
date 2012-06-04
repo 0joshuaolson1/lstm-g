@@ -190,7 +190,7 @@ class LSTM_g:
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
-            netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j)) + " " + str(self.getDelta(j)) + " " + str(self.getDeltaP(j)) + " " + str(self.getDeltaG(j))
+            netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j))
         for i in self.getNodes():
             for j in self.getNodes():
                 if (j, i) in self.getConnections():
