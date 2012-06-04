@@ -10,16 +10,16 @@ Usage
 
 The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal deltas and epsilons related to training. It is of the format:
 
-j s fnx_index delta delta_p delta_g
+j s fnx_index
 ...
 j i w gater epsilon
 ...
 j i k epsilon_k
 ...
 
-In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. The values of the deltas are only important if the network will be trained, in which case they would have been obtained with the toString method explained hereafter. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
+In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
 
-In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The values of the epsilons (and epsilon_ks, addressed below) are likewise important only for future training. The order in which connections are defined does not matter.
+In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The values of the epsilons (and epsilon_ks, addressed below) are important only if the network will be trained in the future. If so, they should be zero if the network is new, or else they should have the values from a previous network's toString() method (explained hereafter). The order in which connections are defined does not matter.
 
 In the third sub-list, again immediately following, an epsilon_k must be provided for each combination of nodes j, i, and k, where there is a connection from i to j and j gates a connection into k.
 
