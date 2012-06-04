@@ -1,7 +1,9 @@
 import math
 class LSTM_g:
-    def constFunc(self, value, mode):
-        return value * (1 - mode)
+    def linearFunc(self, value, mode):
+        if mode == self.VALUE_MODE:
+            return value
+        return 1
     def logisticFunc(self, value, mode):
         def logValue(value):
             return 1. / (1 + math.exp(-value))
@@ -13,7 +15,7 @@ class LSTM_g:
         return logDeriv(value)
 
     def getFuncs(self):
-        return [self.constFunc, self.logisticFunc]
+        return [self.linearFunc, self.logisticFunc]
     def getNodes(self):
         return self.net[0]
     def getConnections(self):
@@ -145,14 +147,11 @@ class LSTM_g:
         self.initNet()
         for line in netSpec:
             args = line.split(" ")
-            if len(args) > 5:
+            if len(args) < 4:
                 self.initNode(int(args[0]))
                 self.setState(int(args[0]), float(args[1]))
                 self.setAct(int(args[0]), self.getFuncs()[int(args[2])](float(args[1]), self.VALUE_MODE))
                 self.setFuncIndex(int(args[0]), int(args[2]))
-                self.setDelta(int(args[0]), float(args[3]))
-                self.setDeltaP(int(args[0]), float(args[4]))
-                self.setDeltaG(int(args[0]), float(args[5]))
             elif len(args) > 4:
                 self.initConnection(int(args[0]), int(args[1]))
                 self.setWeight(int(args[0]), int(args[1]), float(args[2]))
@@ -164,22 +163,6 @@ class LSTM_g:
                 self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
             else:
                 self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
-    def makeStandardSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
-        netSpec = ""
-        
-        return netSpec
-    def makePeepholeSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
-        netSpec = ""
-        
-        return netSpec
-    def makeUngatedSpec(self, inputLayerSize, memoryLayerSize, outputLayerSize):
-        netSpec = ""
-        
-        return netSpec
-    def makeTwoStageSpec(self, inputLayerSize, firstMemoryLayerSize, secondMemoryLayerSize, outputLayerSize):
-        netSpec = ""
-        
-        return netSpec
 
     def __init__(self, netSpec):
         lines = netSpec.split("\n")
@@ -187,14 +170,23 @@ class LSTM_g:
             self.initialize(lines)
             return
         archSpec = lines[0].split(" ")
-        if archSpec[0] == "Standard":
-            self.initialize(self.makeStandardSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
-        if archSpec[0] == "Peephole":
-            self.initialize(self.makePeepholeSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
-        if archSpec[0] == "Ungated":
-            self.initialize(self.makeUngatedSpec(archSpec[1], archSpec[2], archSpec[3]).split("\n"))
-        if archSpec[0] == "TwoStage":
-            self.initialize(self.makeTwoStageSpec(archSpec[1], archSpec[2], archSpec[3], archSpec[4]).split("\n"))
+        inputToOutput = archSpec[0]
+        numInputs = archSpec[1]
+        numOutputs = archSpec[2]
+        numHiddenLayers = (len(archSpec) - 3) / 4
+        peepholeFlags = []
+        peepplusFlags = []
+        memCellCounts = []
+        normCellCounts = []
+        for index in range(3, len(archSpec), 4):
+            peepholeFlags.append(int(archSpec[index]))
+            peepplusFlags.append(int(archSpec[index + 1]))
+            memCellCounts.append(int(archSpec[index + 2]))
+            normCellCounts.append(int(archSpec[index + 3]))
+        newSpec = ""
+        
+        #memory cell - linear activation function, but squashing function too?!
+# inputToOutput numInputs numOutputs( peephole peepplus[0,1,2=ungated] numMemCells numNormCells)+
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
