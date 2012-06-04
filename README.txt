@@ -8,7 +8,7 @@ This library, initially only in Python, is an implementation of LSTM-g from Dere
 
 Usage
 
-The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal deltas and epsilons related to training. It is of the format:
+The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal ds and epsilons related to training. It is of the format:
 
 j s fnx_index
 ...
@@ -25,7 +25,7 @@ In the third sub-list, again immediately following, an epsilon_k must be provide
 
 The learning algorithm assumes that the first n nodes (whose activations will come directly from an input data array of length n) have no incoming connections, that no node gates its self-connection, and that the weight of any self-connection is 1.
 
-toString() returns a string of the same format, specifying the current state, function choices, deltas/epsilons, and topology of the network.
+toString() returns a string of the same format, specifying the current state, function choices, epsilons, and topology of the network.
 
 step(input, mode) takes an array of input data and propagates the input nodes' activations through the network for a single time step. It is the user's responsibility to ensure that the input array's length is consistent with the intended number of input nodes. If the mode is TRAIN_MODE, then eligibility traces that are used in the adjust method (explained below) are updated. Such calculations are skipped if the mode is TEST_MODE.
 
