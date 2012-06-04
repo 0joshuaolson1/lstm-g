@@ -8,7 +8,7 @@ This library, initially only in Python, is an implementation of LSTM-g from Dere
 
 Usage
 
-The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal ds and epsilons related to training. It is of the format:
+The class constructor LSTM_g(netSpec) takes a string, which defines the current states and activation functions for each node and the weights and optional gating nodes for each connection, and additionally stores the internal epsilons related to training. It is of the format:
 
 j s fnx_index
 ...
@@ -17,7 +17,7 @@ j i w gater epsilon
 j i k epsilon_k
 ...
 
-In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the constant function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
+In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the linear function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
 
 In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The values of the epsilons (and epsilon_ks, addressed below) are important only if the network will be trained in the future. If so, they should be zero if the network is new, or else they should have the values from a previous network's toString() method (explained hereafter). The order in which connections are defined does not matter.
 
