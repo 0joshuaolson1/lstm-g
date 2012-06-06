@@ -4,7 +4,7 @@ Among artificial neural networks, the recurrent Long Short-Term Memory (LSTM) ar
 
 Code
 
-This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Currently, code to automatically build the four architectures in the paper is in the works, and will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
+This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Or, given Science Direct access, http://www.sciencedirect.com/science/article/pii/S0893608011002036 has nicer typesetting. Currently, code to automatically build architectures is in the works, and will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
 
 Usage
 
@@ -17,7 +17,7 @@ j i w gater epsilon
 j i k epsilon_k
 ...
 
-In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to one of currently two possible activation functions: 0 is the linear function and 1 is the classic logistic sigmoid. A node's activation follows from its state and function type and thus is never specified. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
+In the first sub-list, j is the integer index of a node, s is the real state, and fnx_index refers to an activation function; 0 is the classic logistic sigmoid, the only option for now. A node's activation follows from its state and function type and thus is never specified. It is assumed that j starts at 0 and increases by one for each new line; nodes are activated in the same ascending order as their indices.
 
 In the second sub-list (no blank line before it), a connection from node i to node j is initialized with real weight w and with an optional gating node whose index is gater. If no gating node is used, gater is -1. The values of the epsilons (and epsilon_ks, addressed below) are important only if the network will be trained in the future. If so, they should be zero if the network is new, or else they should have the values from a previous network's toString() method (explained hereafter). The order in which connections are defined does not matter.
 
@@ -33,7 +33,7 @@ getOutput(length) takes the intended number of output data elements and returns 
 
 adjust(target, learnRate) modifies the network's weights according to the current target output array and the real learning rate.
 
-The learning algorithm assumes that all data points for output are in the range [0, 1]. To incorporate bias inputs (one suggestion is to bias all non-input units), always include an input data point of value 1 and dedicate an input node to share that value with other nodes.
+The learning algorithm assumes that all data points for output are in the [0, 1] range. To incorporate bias inputs (one suggestion is to bias all non-input units), always include an input data point of value 1 and dedicate an input node to share that value with other nodes.
 
 Discussion
 
