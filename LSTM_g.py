@@ -1,9 +1,5 @@
 import math
 class LSTM_g:
-    def linearFunc(self, value, mode):
-        if mode == self.VALUE_MODE:
-            return value
-        return 1
     def logisticFunc(self, value, mode):
         def logValue(value):
             return 1. / (1 + math.exp(-value))
@@ -13,9 +9,8 @@ class LSTM_g:
         if mode == self.VALUE_MODE:
             return logValue(value)
         return logDeriv(value)
-
     def getFuncs(self):
-        return [self.linearFunc, self.logisticFunc]
+        return [self.logisticFunc]
     def getNodes(self):
         return self.net[0]
     def getConnections(self):
@@ -170,23 +165,22 @@ class LSTM_g:
             self.initialize(lines)
             return
         archSpec = lines[0].split(" ")
-        inputToOutput = archSpec[0]
-        numInputs = archSpec[1]
-        numOutputs = archSpec[2]
-        numHiddenLayers = (len(archSpec) - 3) / 4
+        useBiases = archSpec[0]
+        inputToOutput = archSpec[1]
+        numInputs = archSpec[2]
+        numOutputs = archSpec[3]
         peepholeFlags = []
         peepplusFlags = []
         memCellCounts = []
         normCellCounts = []
-        for index in range(3, len(archSpec), 4):
+        for index in range(4, len(archSpec), 4):
             peepholeFlags.append(int(archSpec[index]))
             peepplusFlags.append(int(archSpec[index + 1]))
             memCellCounts.append(int(archSpec[index + 2]))
             normCellCounts.append(int(archSpec[index + 3]))
         newSpec = ""
         
-        #memory cell - linear activation function, but squashing function too?!
-# inputToOutput numInputs numOutputs( peephole peepplus[0,1,2=ungated] numMemCells numNormCells)+
+# useBiases inputToOutput numInputs numOutputs( peephole peepplus[0,1,2=ungated] numMemCells numNormCells)+
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
