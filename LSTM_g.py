@@ -158,7 +158,28 @@ class LSTM_g:
                 self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
             else:
                 self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
-
+    def autoBuild(self, useBiases, inputToOutput, numInputs, numOutputs, peepholeFlags, peepplusFlags, memCellCounts, normNodeCounts, numHiddenLayers):
+        def nodeString(j):
+            return "\n" + j + " 0 0"
+        netSpec = ""
+        layerOffset = numInputs + useBiases
+        for j in range(layerOffset):
+            netSpec += nodeString(j)
+        for hiddenLayer in range(numHiddenLayers):
+            for memNode in range(memCellCounts[hiddenLayer]):
+                for nodeOffset in range(4):
+                    netSpec += nodeString(layerOffset + memNode * 4 + nodeOffset)
+            layerOffset += memCellCounts[hiddenLayer] * 4
+            for normNode in range(normNodeCounts[hiddenLayer]):
+                netSpec += nodeString(layerOffset + normNode)
+            layerOffset += normNodeCounts[hiddenLayer]
+        for j in range(numOutputs):
+            netSpec += nodeString(layerOffset + j)
+        
+        return netSpec[1:]
+#peepplus[0,1,2=ungated]
+#j i w gater epsilon
+#j i k epsilon_k
     def __init__(self, netSpec):
         lines = netSpec.split("\n")
         if len(lines) > 1:
@@ -172,15 +193,13 @@ class LSTM_g:
         peepholeFlags = []
         peepplusFlags = []
         memCellCounts = []
-        normCellCounts = []
+        normNodeCounts = []
         for index in range(4, len(archSpec), 4):
             peepholeFlags.append(int(archSpec[index]))
             peepplusFlags.append(int(archSpec[index + 1]))
             memCellCounts.append(int(archSpec[index + 2]))
-            normCellCounts.append(int(archSpec[index + 3]))
-        newSpec = ""
-        
-# useBiases inputToOutput numInputs numOutputs( peephole peepplus[0,1,2=ungated] numMemCells numNormCells)+
+            normNodeCounts.append(int(archSpec[index + 3]))
+        self.initialize(self.autoBuild(archSpec[0], archSpec[1], archSpec[2], archSpec[3], peepholeFlags, peepplusFlags, memCellCounts, normNodeCounts, len(peepholeFlags)).split("\n"))
     def toString(self):
         netSpec = ""
         for j in self.getNodes():
