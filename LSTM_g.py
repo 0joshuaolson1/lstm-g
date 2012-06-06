@@ -186,10 +186,6 @@ class LSTM_g:
             self.initialize(lines)
             return
         archSpec = lines[0].split(" ")
-        useBiases = archSpec[0]
-        inputToOutput = archSpec[1]
-        numInputs = archSpec[2]
-        numOutputs = archSpec[3]
         peepholeFlags = []
         peepplusFlags = []
         memCellCounts = []
