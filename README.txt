@@ -62,7 +62,7 @@ Each line in the third sub-list specifies an optional layer grouping for any num
 
 The fourth sub-list allows three different types of connections from sendingBlock to receivingBlock. If connectionType is 0, it will be a downstream connection (useful for creating the two-layer network in the LSTM-g paper, for example). If the type is 1, it will be a gated peephole connection such as those used in the gated recurrence architecture in the paper. If the type is 2, it will be an ungated peephole connection, needed to create the paper's gated recurrence architecture or to give a memory block its own peephole connections. Note that, unlike with manual building, the source of a connection is listed before the destination; this is hopefully more intuitive, while the reverse stays consistent with the paper's j-i notation.
 
-The fifth sub-list is all blocks that will project connections to all output nodes
+The fifth sub-list is all blocks that will project connections to all output nodes.
 
 Usage - API
 
