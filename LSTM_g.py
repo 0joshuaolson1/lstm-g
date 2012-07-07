@@ -1,7 +1,6 @@
 import math
+import random
 class LSTM_g:
-    def constFunc(self, value, mode):
-        return value * (1 - mode)
     def logisticFunc(self, value, mode):
         def logValue(value):
             return 1. / (1 + math.exp(-value))
@@ -11,9 +10,8 @@ class LSTM_g:
         if mode == self.VALUE_MODE:
             return logValue(value)
         return logDeriv(value)
-
     def getFuncs(self):
-        return [self.constFunc, self.logisticFunc]
+        return [self.logisticFunc]
     def getNodes(self):
         return self.net[0]
     def getConnections(self):
@@ -21,6 +19,8 @@ class LSTM_g:
     def getEpsilonKs(self):
         return self.net[2]
 
+    def initNet(self):
+        self.net = [{}, {}, {}]
     def initNode(self, j):
         self.net[0][j] = [0, 0, 0, [], 0, 0, 0]
     def initConnection(self, j, i):
@@ -132,54 +132,212 @@ class LSTM_g:
             m = -1
             for k, l in self.getGatedArray(j):
                 if m != k and k > j:
+                    m = k
                     self.setWeight(j, i, self.getWeight(j, i) + learnRate * self.getDelta(k) * self.getEpsilonK(j, i, k))
 
-    def __init__(self, netSpec):
+    def initialize(self, netSpec):
         self.VALUE_MODE = 0
         self.DERIV_MODE = 1
         self.TRAIN_MODE = 0
         self.TEST_MODE = 1
-        self.net = [{}, {}, {}]
-        for line in netSpec.split("\n"):
+        self.initNet()
+        listType = 0
+        for line in netSpec:
+            if line == "":
+                listType += 1
+                continue
             args = line.split(" ")
-            args[0] = int(args[0])
-            args[len(args)-2] = float(args[len(args)-2])
-            args[len(args)-1] = int(args[len(args)-1])
-            if len(args) < 4:
-                self.initNode(args[0])
-                self.setState(args[0], args[1])
-                self.setAct(args[0], self.getFuncs()[args[2]](args[1], self.VALUE_MODE))
-                self.setFuncIndex(args[0], args[2])
-                self.setGatedArray(args[0], [])
-                self.setDelta(args[0], 0)
-                self.setDeltaP(args[0], 0)
-                self.setDeltaG(args[0], 0)
+            if listType < 1:
+                self.initNode(int(args[0]))
+                self.setState(int(args[0]), float(args[1]))
+                self.setAct(int(args[0]), self.getFuncs()[int(args[2])](float(args[1]), self.VALUE_MODE))
+                self.setFuncIndex(int(args[0]), int(args[2]))
+            elif listType < 2:
+                self.initConnection(int(args[0]), int(args[1]))
+                self.setWeight(int(args[0]), int(args[1]), float(args[2]))
+                self.setGater(int(args[0]), int(args[1]), int(args[3]))
+                if int(args[3]) > -1:
+                    gatedArray = self.getGatedArray(int(args[3]))
+                    gatedArray.append(int(args[0]), int(args[1]))
+                    self.setGatedArray(int(args[3]), gatedArray)
+                self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
             else:
-                args[1] = int(args[1])
-                self.initConnection(args[0], args[1])
-                self.setWeight(args[0], args[1], args[2])
-                self.setGater(args[0], args[1], args[3])
-                self.setEpsilon(args[0], args[1], 0)
-                if args[3] > -1:
-                    gatedArray = self.getGatedArray(args[3])
-                    gatedArray.append((args[0], args[1]))
-                    self.setGatedArray(args[3], gatedArray)
-        for j, i in self.getConnections():
-            for k, l in self.getGatedArray(j):
-                self.setEpsilonK(j, i, k, 0)
-    def toString(self):
+                self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
+    def autoBuild(self, numInputs, numOutputs, inputToOutput, biasToOutput, layerFirsts, layerSizes, inputToBlock, biasToBlock, blockToBlock, blockToOutput):
+        def connectionStr(j, i, gater):
+            return "\n" + str(j) + " " + str(i) + " " + str(random.random() / 5 - .1) + " " + str(gater) + " 0"
+        def getBlockIndices(blockOffset, layerFirsts, layerSizes, blockNum):
+            layerIndex = -1
+            leftBound = 0
+            rightBound = len(layerFirsts)
+            while leftBound < rightBound:
+                middle = (leftBound + rightBound) / 2
+                if layerFirsts[middle] > blockNum:
+                    rightBound = middle
+                elif layerFirsts[middle] + layerSizes[middle] > blockNum:
+                    leftBound = middle
+                else:
+                    layerIndex = middle
+                    break
+            blockIndices = []
+            for index in range(blockOffset, blockOffset + 4):
+                if layerIndex < 0:
+                    blockIndices.append(blockNum * 4 + index)
+                else:
+                    blockIndices.append(layerFirsts[layerIndex] * 3 + blockNum + layerSizes[layerIndex] * index)
+            return blockIndices[0], blockIndices[1], blockIndices[2], blockIndices[3]
+        def addEpsilonK(epsilonKs, j, i, k):
+            if j not in epsilonKs:
+                epsilonKs[j] = [set(), set()]
+            if i > -1:
+                epsilonKs[j][0].add(i)
+            if k > -1:
+                epsilonKs[j][1].add(k)
+        useBias = 0
+        if biasToOutput > 1 or len(biasToBlock) > 0:
+            useBias = 1
+        blockOffset = numInputs + useBias
+        numBlocks = max(blockToOutput)
+        for connection in blockToBlock:
+            numBlocks = max(numBlocks, connection[0])
+        outputOffset = blockOffset + numBlocks * 4
         netSpec = ""
+        for nodeNum in range(outputOffset + numOutputs):
+            netSpec += "\n" + str(nodeNum) + " 0 0"
+        netSpec += "\n"
+        if inputToOutput > 0:
+            for inputNum in range(numInputs):
+                for outputNum in range(outputOffset, outputOffset + numOutputs):
+                    netSpec += connectionStr(outputNum, inputNum, -1)
+        if biasToOutput > 0:
+            for outputNum in range(outputOffset, outputOffset + numOutputs):
+                netSpec += connectionStr(outputNum, numInputs, -1)
+        epsilonKs = {}
+        for blockNum in range(numBlocks):
+            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
+            netSpec += "\n" + str(memoryCellIndex) + " " + str(memoryCellIndex) + " 1 " + str(forgetGateIndex) + " 0"
+            addEpsilonK(epsilonKs, forgetGateIndex, -1, memoryCellIndex)
+        for blockNum in inputToBlock:
+            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
+            for inputNum in range(numInputs):
+                netSpec += connectionStr(inputGateIndex, inputNum, -1)
+                netSpec += connectionStr(forgetGateIndex, inputNum, -1)
+                netSpec += connectionStr(memoryCellIndex, inputNum, inputGateIndex)
+                netSpec += connectionStr(outputGateIndex, inputNum, -1)
+                addEpsilonK(epsilonKs, inputGateIndex, inputNum, memoryCellIndex)
+                addEpsilonK(epsilonKs, forgetGateIndex, inputNum, -1)
+                addEpsilonK(epsilonKs, outputGateIndex, inputNum, -1)
+        for blockNum in biasToBlock:
+            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
+            netSpec += connectionStr(inputGateIndex, numInputs, -1)
+            netSpec += connectionStr(forgetGateIndex, numInputs, -1)
+            netSpec += connectionStr(memoryCellIndex, numInputs, inputGateIndex)
+            netSpec += connectionStr(outputGateIndex, numInputs, -1)
+            addEpsilonK(epsilonKs, inputGateIndex, numInputs, -1)
+            addEpsilonK(epsilonKs, forgetGateIndex, numInputs, -1)
+            addEpsilonK(epsilonKs, outputGateIndex, numInputs, -1)
+        for connection in blockToBlock:
+            inputGateIndexTo, forgetGateIndexTo, memoryCellIndexTo, outputGateIndexTo = getBlockIndices(connection[0])
+            inputGateIndexFrom, forgetGateIndexFrom, memoryCellIndexFrom, outputGateIndexFrom = getBlockIndices(connection[1])
+            if connection[2] < 1:
+                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, -1)
+                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, -1)
+                netSpec += connectionStr(memoryCellIndexTo, memoryCellIndexFrom, inputGateIndexTo)
+                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, memoryCellIndexTo)
+                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
+            elif connection[2] < 2:
+                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, -1)
+                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, -1)
+                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
+            else:
+                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
+                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
+                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
+                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
+                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, inputGateIndexTo)
+                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, forgetGateIndexTo)
+                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, outputGateIndexTo)
+        for blockNum in blockToOutput:
+            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
+            for outputNum in range(outputOffset, outputOffset + numOutputs):
+                netSpec += connectionStr(outputNum, memoryCellIndex, outputGateIndex)
+                addEpsilonK(epsilonKs, outputGateIndex, -1, outputNum)
+        netSpec += "\n"
+        for j in epsilonKs:
+            for i in epsilonKs[j][0]:
+                for k in epsilonKs[j][1]:
+                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " 0"
+        return netSpec[1:]
+#0
+#j s fnx_index
+#j i w gater epsilon
+#j i k epsilon_k
+# OR
+#1
+#numInputs[1+] numOutputs[1+] i-o[0/1] Bias-o[0/1](not list)
+#i-c[0+]
+#b-c[0+]
+#firstInLayer[0+] numInLayer[2+]
+#c-c{down,peephole,gated}[0+,0+,0-2]
+#c-o[0+]
+
+#see 3.3.(2,5), 4.2.1, 5.5.1, 6.6.2, 7.2.1 of thesis for bias ideas
+#see papers, tanh, magic number for activation function ideas
+#to do: list random weight ideas
+    def __init__(self, netSpec):
+        lines = netSpec.split("\n")
+        if lines[0] == "0":
+            self.initialize(lines[2:])
+            return
+        settings = lines[2].split(" ")
+        layerFirsts = layerSizes = inputToBlock = biasToBlock = blockToBlock = blockToOutput = []
+        listType = 0
+        for line in lines[4:]:
+            if line == "":
+                listType += 1
+                continue
+            if listType < 1:
+                inputToBlock.append(int(line))
+            elif listType < 2:
+                biasToBlock.append(int(line))
+            elif listType < 3:
+                args = line.split(" ")
+                layerFirsts.append(int(args[0]))
+                layerSizes.append(int(args[1]))
+            elif listType < 4:
+                args = line.split(" ")
+                blockToBlock.append([int(args[0]), int(args[1]), int(args[2])])
+            else:
+                blockToOutput.append(int(line))
+        self.initialize(self.autoBuild(int(settings[0]), int(settings[1]), int(settings[2]), int(settings[3]), layerFirsts, layerSizes, inputToBlock, biasToBlock, blockToBlock, blockToOutput).split("\n"))
+    def toString(self):
+        netSpec = "0\n"
         for j in self.getNodes():
             netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j))
+        netSpec += "\n"
         for i in self.getNodes():
             for j in self.getNodes():
                 if (j, i) in self.getConnections():
-                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i))
-        return netSpec[1:]
-    def step(self, input, mode):
-        for j in input:
-            self.setAct(j, input[j])
-        for j in range(len(input), len(input[1])):
+                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i)) + " " + str(self.getEpsilon(j, i))
+        netSpec += "\n"
+        for j, i in self.getConnections():
+            m = -1
+            for k, l in self.getGatedArray(j):
+                if m != k:
+                    m = k
+                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " " + str(self.getEpsilonK(j, i, k))
+        return netSpec
+    def step(self, inputs, mode):
+        for j in range(len(inputs)):
+            self.setAct(j, inputs[j])
+        for j in range(len(inputs), len(self.getNodes()):
             self.calcState(j)
             self.setAct(j, self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.VALUE_MODE))
             if mode == self.TRAIN_MODE:
