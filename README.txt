@@ -64,6 +64,8 @@ The fourth sub-list allows three different types of connections from sendingBloc
 
 The fifth sub-list is all blocks that will project connections to all output nodes.
 
+Currently, all connections except for the constant-weight-of-one memory cell self-connections are given randomized weights in the range [-0.1, 0.1), just like in the paper.
+
 Usage - API
 
 toString() returns a string of the same format as that described in the manual building section, specifying the current state, function choices, epsilons, and topology of the network.
