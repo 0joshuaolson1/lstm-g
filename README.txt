@@ -2,7 +2,7 @@ Introduction
 
 Among artificial neural networks, the recurrent Long Short-Term Memory (LSTM) architecture and algorithm has a large amount of empirical support for its ability to efficiently learn and generalize despite noise in and time lags between relevant inputs, and on several problems for which other network types lack the power. See http://www.felixgers.de/papers/phd.pdf for a comprehensive overview of the state-of-the-art model, or http://etd.uwc.ac.za/usrfiles/modules/etd/docs/etd_init_3937_1174040706.pdf for a terser explanation. In 2010, LSTM was generalized and simplified in "A generalized LSTM-like training algorithm for second-order recurrent neural networks" to require only one type of node while preserving the space and time locality of LSTM's back-propagation-like learning algorithm.
 
-Code
+Papers
 
 This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Or, given Science Direct access, http://www.sciencedirect.com/science/article/pii/S0893608011002036 has nicer typesetting. This library includes code to automatically build architectures, which will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
 
