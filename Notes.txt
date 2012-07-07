@@ -1,6 +1,9 @@
+you can update layers in any order, as long as you calculate their weight change in the reverse order
 gated connection uses most recent gater activation for gain calculation
 http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf (remember to cite [a neural network journal])
 let him know if have question or do cool thing
 
-see bias info in http://www.felixgers.de/papers/phd.pdf
-you can update layers in any order, as long as you calculate their weight change in the reverse order
+see 3.3.(2,5), 4.2.1, 5.5.1, 6.6.2, 7.2.1 of thesis for bias ideas
+see papers, tanh, magic number for activation function ideas
+to do: list random weight ideas
+
