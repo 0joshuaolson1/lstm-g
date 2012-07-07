@@ -141,6 +141,7 @@ class LSTM_g:
         self.TRAIN_MODE = 0
         self.TEST_MODE = 1
         self.initNet()
+<<<<<<< HEAD
         listType = 0
         for line in netSpec:
             if line == "":
@@ -148,11 +149,20 @@ class LSTM_g:
                 continue
             args = line.split(" ")
             if listType < 1:
+=======
+        for line in netSpec:
+            args = line.split(" ")
+            if len(args) < 4:
+>>>>>>> d3512ae7f96751d9bb4c5bdd46a1c97c22841808
                 self.initNode(int(args[0]))
                 self.setState(int(args[0]), float(args[1]))
                 self.setAct(int(args[0]), self.getFuncs()[int(args[2])](float(args[1]), self.VALUE_MODE))
                 self.setFuncIndex(int(args[0]), int(args[2]))
+<<<<<<< HEAD
             elif listType < 2:
+=======
+            elif len(args) > 4:
+>>>>>>> d3512ae7f96751d9bb4c5bdd46a1c97c22841808
                 self.initConnection(int(args[0]), int(args[1]))
                 self.setWeight(int(args[0]), int(args[1]), float(args[2]))
                 self.setGater(int(args[0]), int(args[1]), int(args[3]))
@@ -163,6 +173,7 @@ class LSTM_g:
                 self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
             else:
                 self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
+<<<<<<< HEAD
     def autoBuild(self, numInputs, numOutputs, inputToOutput, biasToOutput, layerFirsts, layerSizes, inputToBlock, biasToBlock, blockToBlock, blockToOutput):
         def connectionStr(j, i, gater):
             return "\n" + str(j) + " " + str(i) + " " + str(random.random() / 5 - .1) + " " + str(gater) + " 0"
@@ -201,6 +212,57 @@ class LSTM_g:
         for connection in blockToBlock:
             numBlocks = max(numBlocks, connection[0])
         outputOffset = blockOffset + numBlocks * 4
+=======
+    def autoBuild(self, numInputs, numOutputs, inputToOutput, useOutputBias, hiddenLayerSizes, useBiasFlags, peepholeFlags, peepplusFlags, numHiddenLayers):
+        def nodeString(j):
+            return "\n" + j + " 0 0"
+        netSpec = ""
+        useBiases = useOutputBias
+        for biasFlag in useBiasFlags:
+            if biasFlag > 0:
+                useBiases = 1
+        layerOffset = numInputs + useBiases
+        for j in range(layerOffset):
+            netSpec += nodeString(j)
+        for hiddenLayer in range(numHiddenLayers):
+            for memNode in range(memCellCounts[hiddenLayer]):
+                for nodeOffset in range(4):
+                    netSpec += nodeString(layerOffset + memNode * 4 + nodeOffset)
+            layerOffset += memCellCounts[hiddenLayer] * 4
+            for normNode in range(normNodeCounts[hiddenLayer]):
+                netSpec += nodeString(layerOffset + normNode)
+            layerOffset += normNodeCounts[hiddenLayer]
+        for j in range(numOutputs):
+            netSpec += nodeString(layerOffset + j)
+        if inputToOutput > 0:
+            for i in range(numInputs + useBiases):
+                for j in range(numOutputs):
+                    netSpec += nodeString(layerOffset + j)
+        if useBiases > 0:
+            pass
+        return netSpec[1:]
+#peepplus[0,1,2=ungated]
+#j s fnx_index
+#j i w gater epsilon
+#j i k epsilon_k
+    def __init__(self, netSpec):
+        lines = netSpec.split("\n")
+        if len(lines) > 1:
+            self.initialize(lines)
+            return
+        archSpec = lines[0].split(" ")
+        hiddenLayerSizes = []
+        useBiasFlags = []
+        peepholeFlags = []
+        peepplusFlags = []
+        for index in range(4, len(archSpec), 4):
+            hiddenLayerSizes.append(int(archSpec[index]))
+            useBiasFlags.append(int(archSpec[index + 1]))
+            peepholeFlags.append(int(archSpec[index + 2]))
+            peepplusFlags.append(int(archSpec[index + 3]))
+        self.initialize(self.autoBuild(int(archSpec[0]), int(archSpec[1]), int(archSpec[2]), int(archSpec[3]), hiddenLayerSizes, useBiasFlags, peepholeFlags, peepplusFlags, len(hiddenLayerSizes)).split("\n"))
+    def toString(self):
+>>>>>>> d3512ae7f96751d9bb4c5bdd46a1c97c22841808
         netSpec = ""
         for nodeNum in range(outputOffset + numOutputs):
             netSpec += "\n" + str(nodeNum) + " 0 0"
@@ -326,14 +388,23 @@ class LSTM_g:
             for j in self.getNodes():
                 if (j, i) in self.getConnections():
                     netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i)) + " " + str(self.getEpsilon(j, i))
+<<<<<<< HEAD
         netSpec += "\n"
         for j, i in self.getConnections():
             m = -1
+=======
+        m = -1
+        for j, i in self.getConnections():
+>>>>>>> d3512ae7f96751d9bb4c5bdd46a1c97c22841808
             for k, l in self.getGatedArray(j):
                 if m != k:
                     m = k
                     netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " " + str(self.getEpsilonK(j, i, k))
+<<<<<<< HEAD
         return netSpec
+=======
+        return netSpec[1:]
+>>>>>>> d3512ae7f96751d9bb4c5bdd46a1c97c22841808
     def step(self, inputs, mode):
         for j in range(len(inputs)):
             self.setAct(j, inputs[j])
