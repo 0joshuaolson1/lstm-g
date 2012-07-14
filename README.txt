@@ -84,7 +84,7 @@ While the point of LSTM-g is to allow LSTM-like architectures, the choice of how
 
 It is possible to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass.
 
-There are currently no functions to calculate error; there are different ways to do so, but none of them are necessary to implement the learning algorithm. (However, the algorithm is derived using the cross-entropy function.) Neither are there functions for batch training, momentum, alpha stepping, bagging, boosting, or any of that. There's a lot more that could be done...
+There are currently no functions to calculate error; there are different ways to do so, but none of them are necessary to implement the learning algorithm. (However, the algorithm was derived using the cross-entropy function.) Neither are there functions for batch training, momentum, alpha stepping, bagging, boosting, or any of that. There's a lot more that could be done...
 
 One long-term goal of this library is efficiency. The current Python code is intended to be functional, but it is also meant to be directly illustrative of the definition of Generalized LSTM as found in Monner's paper. Strictly speaking, the fastest platform-independent library implementation would probably be a program that generates a C/C++ header file with a hard-coded network and optimized activation function approximations. However, an almost equally efficient but more flexible solution would either be loadable as a dynamic library (for local applications) or run as an application with a API through UDP or TCP sockets (for remote use).
 
