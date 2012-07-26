@@ -76,7 +76,7 @@ getOutput(length) takes the intended number of output data elements and returns 
 
 adjust(target, learnRate) modifies the network's weights according to the current target output array and the real learning rate.
 
-The learning algorithm assumes that all data points for output are in the [0, 1] range. To incorporate bias inputs (one suggestion is to bias all non-input units) in manual building, always include an input data point of value 1 and dedicate an input node to share that value with other nodes. In automatic building, if either biasToOutputConnections is 1 or biasReceivingBlock is non-empty, the user is likewise expected to include a constant input of one, appended at the end of any input array (so it would have length numberOfInputs + 1).
+The learning algorithm assumes that all data points for output are in the [0, 1] range (limiting output nodes' possible activation functions, to keep in mind once more function choices are implemented). To incorporate bias inputs (one suggestion is to bias all non-input units) in manual building, always include an input data point of value 1 and dedicate an input node to share that value with other nodes. In automatic building, if either biasToOutputConnections is 1 or biasReceivingBlock is non-empty, the user is likewise expected to include a constant input of one, appended at the end of any input array (so it would have length numberOfInputs + 1).
 
 Discussion
 
