@@ -80,7 +80,7 @@ The learning algorithm assumes that all data points for output are in the [0, 1]
 
 Discussion
 
-While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user when manually building. Unless the autmatic building functionality is used, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; note that D. Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections. Even still, the types of connections currently allowed by automatic building are dictated by the graphics in the paper.
+While the point of LSTM-g is to allow LSTM-like architectures, the choice of how to connect nodes and gate those connections is left to the user when manually building. Unless the automatic building functionality is used, a reading of the LSTM-g paper is pretty much necessary in order to understand how to properly build a high-performance network; note that D. Monner reinterpreted gating in the standard LSTM model from being on activations to being on connections. Even still, the types of connections currently allowed by automatic building are dictated by the graphics in the paper.
 
 It is possible to perform multiple input-to-output forward passes between backward passes, since information used to adjust weights is updated every forward pass.
 
