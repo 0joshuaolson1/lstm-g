@@ -4,7 +4,7 @@ Among artificial neural networks, the recurrent Long Short-Term Memory (LSTM) ar
 
 Code
 
-This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/lstmg.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Or, given Science Direct access, http://www.sciencedirect.com/science/article/pii/S0893608011002036 has nicer typesetting. This library includes code to automatically build architectures, which will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
+This library, initially only in Python, is an implementation of LSTM-g from Derek Monner's paper. See http://www.cs.umd.edu/~dmonner/papers/nn2012.pdf for the full source, in addition to experiments and explanations of network set-ups used in them. Or, given Science Direct access, http://www.sciencedirect.com/science/article/pii/S0893608011002036 has nicer typesetting. This library includes code to automatically build architectures, which will be used to test for identical weight changes to those in D. Monner's Java implementation (https://bitbucket.org/dmonner/xlbp/src).
 
 Usage - Manual Building
 
