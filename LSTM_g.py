@@ -1,342 +1,177 @@
-import math
-import random
+#175 lines not including comments, which are coming soon
+#no line is longer than 99 characters - sorry if you wanted 80
+import math, random, os
 class LSTM_g:
-    def logisticFunc(self, value, mode):
-        def logValue(value):
-            return 1. / (1 + math.exp(-value))
-        def logDeriv(value):
-            result = logValue(value)
-            return result * (1 - result)
-        if mode == self.VALUE_MODE:
-            return logValue(value)
-        return logDeriv(value)
-    def getFuncs(self):
-        return [self.logisticFunc]
-    def getNodes(self):
-        return self.net[0]
-    def getConnections(self):
-        return self.net[1]
-    def getEpsilonKs(self):
-        return self.net[2]
-
-    def initNet(self):
-        self.net = [{}, {}, {}]
-    def initNode(self, j):
-        self.net[0][j] = [0, 0, 0, [], 0, 0, 0]
-    def initConnection(self, j, i):
-        self.net[1][j, i] = [0, 0, 0]
-
-    def getState(self, j):
-        return self.net[0][j][0]
-    def setState(self, j, s):
-        self.net[0][j][0] = s
-    def getAct(self, j):
-        return self.net[0][j][1]
-    def setAct(self, j, y):
-        self.net[0][j][1] = y
-    def getFuncIndex(self, j):
-        return self.net[0][j][2]
-    def setFuncIndex(self, j, f):
-        self.net[0][j][2] = f
-    def getGatedArray(self, j):
-        return self.net[0][j][3]
-    def setGatedArray(self, j, gated):
-        self.net[0][j][3] = gated
-    def getDelta(self, j):
-        return self.net[0][j][4]
-    def setDelta(self, j, delta):
-        self.net[0][j][4] = delta
-    def getDeltaP(self, j):
-        return self.net[0][j][5]
-    def setDeltaP(self, j, deltaP):
-        self.net[0][j][5] = deltaP
-    def getDeltaG(self, j):
-        return self.net[0][j][6]
-    def setDeltaG(self, j, deltaG):
-        self.net[0][j][6] = deltaG
-    def getWeight(self, j, i):
-        return self.net[1][j, i][0]
-    def setWeight(self, j, i, w):
-        self.net[1][j, i][0] = w
-    def getGater(self, j, i):
-        return self.net[1][j, i][1]
-    def setGater(self, j, i, gater):
-        self.net[1][j, i][1] = gater
-    def getEpsilon(self, j, i):
-        return self.net[1][j, i][2]
-    def setEpsilon(self, j, i, epsilon):
-        self.net[1][j, i][2] = epsilon
-    def getEpsilonK(self, j, i, k):
-        return self.net[2][j, i, k]
-    def setEpsilonK(self, j, i, k, epsilonK):
-        self.net[2][j, i, k] = epsilonK
-
+    def actFunc(self, s, derivative, bias=0):
+        value = 1 / (1 + math.exp(bias - s))
+        if derivative:
+            value *= 1 - value
+        return value
     def gain(self, j, i):
-        if self.getGater(j, i) < 0:
+        if (j, i) in self.gater:
+            return self.activation[self.gater[j, i]]
+        if (j, i) in self.weight:
             return 1
-        return self.getAct(self.getGater(j, i))
-    def calcState(self, j):
-        if (j, j) in self.getConnections():
-            self.setState(j, self.getState(j) * self.gain(j, j) * self.getWeight(j, j))
-        else:
-            self.setState(j, 0)
-        for i in self.getNodes():
-            if j != i and (j, i) in self.getConnections():
-                self.setState(j, self.getState(j) + self.gain(j, i) * self.getWeight(j, i) * self.getAct(i))
-    def calcEpsilon(self, j, i):
-        if (j, j) in self.getConnections():
-            self.setEpsilon(j, i, self.getEpsilon(j, i) * self.gain(j, j) * self.getWeight(j, j))
-        else:
-            self.setEpsilon(j, i, 0)
-        self.setEpsilon(j, i, self.getEpsilon(j, i) + self.gain(j, i) * self.getAct(i))
-    def calcEpsilonK(self, j, i, k):
-        if (k, k) in self.getConnections():
-            self.setEpsilonK(j, i, k, self.getEpsilonK(j, i, k) * self.gain(k, k) * self.getWeight(k, k))
-            if (k, k) in self.getGatedArray(j):
-                self.setEpsilonK(j, i, k, self.getEpsilonK(j, i, k) + self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.DERIV_MODE) * self.getEpsilon(j, i) * self.getWeight(k, k) * self.getState(k))
-        else:
-            self.setEpsilonK(j, i, k, 0)
-        for p, a in self.getGatedArray(j):
-            if p == k and a != k:
-                self.setEpsilonK(j, i, k, self.getEpsilonK(j, i, k) + self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.DERIV_MODE) * self.getEpsilon(j, i) * self.getWeight(k, a) * self.getAct(a))
-    def updateTraces(self, j):
-        for i in self.getNodes():
-            if (j, i) in self.getConnections():
-                self.calcEpsilon(j, i)
-                m = -1
-                for k, l in self.getGatedArray(j):
-                    if m != k:
-                        m = k
-                        self.calcEpsilonK(j, i, k)
-    def calcDeltaP(self, j):
-        self.setDeltaP(j, 0)
-        for k in range(j + 1, len(self.getNodes())):
-            if (k, j) in self.getConnections():
-                self.setDeltaP(j, self.getDeltaP(j) + self.getDelta(k) * self.gain(k, j) * self.getWeight(k, j))
-        self.setDeltaP(j, self.getDeltaP(j) * self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.DERIV_MODE))
-    def calcDeltaG(self, j):
-        self.setDeltaG(j, 0)
-        m = -1
-        for k, l in self.getGatedArray(j):
-            if m != k and k > j:
-                m = k
-                if (k, k) in self.getConnections():
-                    self.setDeltaG(j, self.getDeltaG(j) + self.getDelta(k) * self.getWeight(k, k) * self.getState(k))
-                for p, a in self.getGatedArray(j):
-                    if p == k and a != k:
-                        self.setDeltaG(j, self.getDeltaG(j) + self.getDelta(k) * self.getWeight(k, a) * self.getAct(a))
-        self.setDeltaG(j, self.getDeltaG(j) * self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.DERIV_MODE))
-    def updateWeights(self, learnRate):
-        for j, i in self.getConnections():
-            self.setWeight(j, i, self.getWeight(j, i) + learnRate * self.getDeltaP(j) * self.getEpsilon(j, i))
-            m = -1
-            for k, l in self.getGatedArray(j):
-                if m != k and k > j:
-                    m = k
-                    self.setWeight(j, i, self.getWeight(j, i) + learnRate * self.getDelta(k) * self.getEpsilonK(j, i, k))
-
-    def initialize(self, netSpec):
-        self.VALUE_MODE = 0
-        self.DERIV_MODE = 1
-        self.TRAIN_MODE = 0
-        self.TEST_MODE = 1
-        self.initNet()
-        listType = 0
-        for line in netSpec:
-            if line == "":
-                listType += 1
-                continue
-            args = line.split(" ")
-            if listType < 1:
-                self.initNode(int(args[0]))
-                self.setState(int(args[0]), float(args[1]))
-                self.setAct(int(args[0]), self.getFuncs()[int(args[2])](float(args[1]), self.VALUE_MODE))
-                self.setFuncIndex(int(args[0]), int(args[2]))
-            elif listType < 2:
-                self.initConnection(int(args[0]), int(args[1]))
-                self.setWeight(int(args[0]), int(args[1]), float(args[2]))
-                self.setGater(int(args[0]), int(args[1]), int(args[3]))
-                if int(args[3]) > -1:
-                    gatedArray = self.getGatedArray(int(args[3]))
-                    gatedArray.append(int(args[0]), int(args[1]))
-                    self.setGatedArray(int(args[3]), gatedArray)
-                self.setEpsilon(int(args[0]), int(args[1]), float(args[4]))
+        return 0
+    def theTerm(self, j, k, state, activation):
+            term = 0
+            if (k, k) in self.gater and j == self.gater[k, k]:
+                term = state[k]
+            for l, a in self.gater:
+                if l == k and a != k and j == self.gater[k, a] and activation is self.activation:
+                    term += self.weight[k, a] * activation[a]
+                elif l == k and a != k and j == self.gater[k, a]:
+                    term += self.weight[k, a] * activation[k, a]
+            return term
+    def build(self, specData):
+        self.state, self.activation, self.weight, self.gater = {}, {}, {}, {}
+        self.trace, self.extendedTrace = {}, {}
+        self.numInputs, self.numOutputs = int(specData[0][0]), int(specData[0][1])
+        newNetwork = True
+        for args in specData[1:]:
+            if len(args) < 3:
+                newNetwork = False
+                self.state[int(args[0])] = float(args[1])
+                self.activation[int(args[0])] = self.actFunc(self.state[int(args[0])], False)
+            if newNetwork:
+                self.weight[int(args[0]), int(args[1])] = float(args[2])
+                if args[3] != "-1":
+                    self.gater[int(args[0]), int(args[1])] = int(args[3])
+                if args[0] != args[1]:
+                    self.trace[int(args[0]), int(args[1])] = 0
+            elif len(args) > 3:
+                self.extendedTrace[int(args[0]), int(args[1]), int(args[2])] = float(args[3])
+            elif len(args) > 2:
+                self.trace[int(args[0]), int(args[1])] = float(args[2])
+        if newNetwork:
+            for j, i in self.trace:
+                self.state[j] = self.activation[j] = 0
+                for k, a in self.gater:
+                    if j < k and j == self.gater[k, a]:
+                        self.extendedTrace[j, i, k] = 0
+        self.numUnits = max(self.state) + 1
+    def toLowLevel(self, specData):
+        def addConnection(j, i, g=-1):
+            specData.append([str(j), str(i), repr(random.uniform(-.1, .1)), str(g)])
+        def unitsInBlock(blockNum):
+            for firstBlockInLayer, layerSize in layerData:
+                if 0 <= blockNum - firstBlockInLayer < layerSize:
+                    offset = numInputs + 3 * firstBlockInLayer + blockNum
+                    return range(offset, offset + 4 * layerSize, layerSize)
+            return range(numInputs + 4 * blockNum, numInputs + 4 * blockNum + 4, 4)
+        numInputs, numOutputs = int(specData[0][0]), int(specData[0][1])
+        inputToOutput, biasOutput = int(specData[0][2]), int(specData[0][3])
+        lastInput = numInputs - int(biasOutput)
+        blockData, connections, layerData = [], [], []
+        for args in specData[1:]:
+            if len(args) > 3:
+                blockData.append([int(args[0]), args[1], args[2], args[3]])
+                if args[3] == "1":
+                    lastInput = numInputs - 1
+            elif len(args) > 2:
+                connections.append([int(args[0]), int(args[1]), args[2]])
             else:
-                self.setEpsilonK(int(args[0]), int(args[1]), int(args[2]), float(args[3]))
-    def autoBuild(self, numInputs, numOutputs, inputToOutput, biasToOutput, layerFirsts, layerSizes, inputToBlock, biasToBlock, blockToBlock, blockToOutput):
-        def connectionStr(j, i, gater):
-            return "\n" + str(j) + " " + str(i) + " " + str(random.random() / 5 - .1) + " " + str(gater) + " 0"
-        def getBlockIndices(blockOffset, layerFirsts, layerSizes, blockNum):
-            layerIndex = -1
-            leftBound = 0
-            rightBound = len(layerFirsts)
-            while leftBound < rightBound:
-                middle = (leftBound + rightBound) / 2
-                if layerFirsts[middle] > blockNum:
-                    rightBound = middle
-                elif layerFirsts[middle] + layerSizes[middle] > blockNum:
-                    leftBound = middle
-                else:
-                    layerIndex = middle
-                    break
-            blockIndices = []
-            for index in range(blockOffset, blockOffset + 4):
-                if layerIndex < 0:
-                    blockIndices.append(blockNum * 4 + index)
-                else:
-                    blockIndices.append(layerFirsts[layerIndex] * 3 + blockNum + layerSizes[layerIndex] * index)
-            return blockIndices[0], blockIndices[1], blockIndices[2], blockIndices[3]
-        def addEpsilonK(epsilonKs, j, i, k):
-            if j not in epsilonKs:
-                epsilonKs[j] = [set(), set()]
-            if i > -1:
-                epsilonKs[j][0].add(i)
-            if k > -1:
-                epsilonKs[j][1].add(k)
-        useBias = 0
-        if biasToOutput > 1 or len(biasToBlock) > 0:
-            useBias = 1
-        blockOffset = numInputs + useBias
-        numBlocks = max(blockToOutput)
-        for connection in blockToBlock:
-            numBlocks = max(numBlocks, connection[0])
-        outputOffset = blockOffset + numBlocks * 4
-        netSpec = ""
-        for nodeNum in range(outputOffset + numOutputs):
-            netSpec += "\n" + str(nodeNum) + " 0 0"
-        netSpec += "\n"
-        if inputToOutput > 0:
-            for inputNum in range(numInputs):
-                for outputNum in range(outputOffset, outputOffset + numOutputs):
-                    netSpec += connectionStr(outputNum, inputNum, -1)
-        if biasToOutput > 0:
-            for outputNum in range(outputOffset, outputOffset + numOutputs):
-                netSpec += connectionStr(outputNum, numInputs, -1)
-        epsilonKs = {}
-        for blockNum in range(numBlocks):
-            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
-            netSpec += "\n" + str(memoryCellIndex) + " " + str(memoryCellIndex) + " 1 " + str(forgetGateIndex) + " 0"
-            addEpsilonK(epsilonKs, forgetGateIndex, -1, memoryCellIndex)
-        for blockNum in inputToBlock:
-            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
-            for inputNum in range(numInputs):
-                netSpec += connectionStr(inputGateIndex, inputNum, -1)
-                netSpec += connectionStr(forgetGateIndex, inputNum, -1)
-                netSpec += connectionStr(memoryCellIndex, inputNum, inputGateIndex)
-                netSpec += connectionStr(outputGateIndex, inputNum, -1)
-                addEpsilonK(epsilonKs, inputGateIndex, inputNum, memoryCellIndex)
-                addEpsilonK(epsilonKs, forgetGateIndex, inputNum, -1)
-                addEpsilonK(epsilonKs, outputGateIndex, inputNum, -1)
-        for blockNum in biasToBlock:
-            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
-            netSpec += connectionStr(inputGateIndex, numInputs, -1)
-            netSpec += connectionStr(forgetGateIndex, numInputs, -1)
-            netSpec += connectionStr(memoryCellIndex, numInputs, inputGateIndex)
-            netSpec += connectionStr(outputGateIndex, numInputs, -1)
-            addEpsilonK(epsilonKs, inputGateIndex, numInputs, -1)
-            addEpsilonK(epsilonKs, forgetGateIndex, numInputs, -1)
-            addEpsilonK(epsilonKs, outputGateIndex, numInputs, -1)
-        for connection in blockToBlock:
-            inputGateIndexTo, forgetGateIndexTo, memoryCellIndexTo, outputGateIndexTo = getBlockIndices(connection[0])
-            inputGateIndexFrom, forgetGateIndexFrom, memoryCellIndexFrom, outputGateIndexFrom = getBlockIndices(connection[1])
-            if connection[2] < 1:
-                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, -1)
-                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, -1)
-                netSpec += connectionStr(memoryCellIndexTo, memoryCellIndexFrom, inputGateIndexTo)
-                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, memoryCellIndexTo)
-                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
-            elif connection[2] < 2:
-                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, -1)
-                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, -1)
-                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
-            else:
-                netSpec += connectionStr(inputGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
-                netSpec += connectionStr(forgetGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
-                netSpec += connectionStr(outputGateIndexTo, memoryCellIndexFrom, outputGateIndexFrom)
-                addEpsilonK(epsilonKs, inputGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, forgetGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, outputGateIndexTo, memoryCellIndexFrom, -1)
-                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, inputGateIndexTo)
-                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, forgetGateIndexTo)
-                addEpsilonK(epsilonKs, outputGateIndexFrom, -1, outputGateIndexTo)
-        for blockNum in blockToOutput:
-            inputGateIndex, forgetGateIndex, memoryCellIndex, outputGateIndex = getBlockIndices(blockNum)
-            for outputNum in range(outputOffset, outputOffset + numOutputs):
-                netSpec += connectionStr(outputNum, memoryCellIndex, outputGateIndex)
-                addEpsilonK(epsilonKs, outputGateIndex, -1, outputNum)
-        netSpec += "\n"
-        for j in epsilonKs:
-            for i in epsilonKs[j][0]:
-                for k in epsilonKs[j][1]:
-                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " 0"
-        return netSpec[1:]
-
-    def __init__(self, netSpec):
-        lines = netSpec.split("\n")
-        if lines[0] == "0":
-            self.initialize(lines[2:])
-            return
-        settings = lines[2].split(" ")
-        layerFirsts = layerSizes = inputToBlock = biasToBlock = blockToBlock = blockToOutput = []
-        listType = 0
-        for line in lines[4:]:
-            if line == "":
-                listType += 1
-                continue
-            if listType < 1:
-                inputToBlock.append(int(line))
-            elif listType < 2:
-                biasToBlock.append(int(line))
-            elif listType < 3:
-                args = line.split(" ")
-                layerFirsts.append(int(args[0]))
-                layerSizes.append(int(args[1]))
-            elif listType < 4:
-                args = line.split(" ")
-                blockToBlock.append([int(args[0]), int(args[1]), int(args[2])])
-            else:
-                blockToOutput.append(int(line))
-        self.initialize(self.autoBuild(int(settings[0]), int(settings[1]), int(settings[2]), int(settings[3]), layerFirsts, layerSizes, inputToBlock, biasToBlock, blockToBlock, blockToOutput).split("\n"))
-    def toString(self):
-        netSpec = "0\n"
-        for j in self.getNodes():
-            netSpec += "\n" + str(j) + " " + str(self.getState(j)) + " " + str(self.getFuncIndex(j))
-        netSpec += "\n"
-        for i in self.getNodes():
-            for j in self.getNodes():
-                if (j, i) in self.getConnections():
-                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(self.getWeight(j, i)) + " " + str(self.getGater(j, i)) + " " + str(self.getEpsilon(j, i))
-        netSpec += "\n"
-        for j, i in self.getConnections():
-            m = -1
-            for k, l in self.getGatedArray(j):
-                if m != k:
-                    m = k
-                    netSpec += "\n" + str(j) + " " + str(i) + " " + str(k) + " " + str(self.getEpsilonK(j, i, k))
-        return netSpec
-    def step(self, inputs, mode):
-        for j in range(len(inputs)):
-            self.setAct(j, inputs[j])
-        for j in range(len(inputs), len(self.getNodes()):
-            self.calcState(j)
-            self.setAct(j, self.getFuncs()[self.getFuncIndex(j)](self.getState(j), self.VALUE_MODE))
-            if mode == self.TRAIN_MODE:
-                self.updateTraces(j)
-    def getOutput(self, length):
-        result = []
-        for j in range(len(self.getNodes()) - length, len(self.getNodes())):
-            result.append(self.getAct(j))
-        return result
-    def adjust(self, target, learnRate):
-        for j in range(len(self.getNodes()) - len(target), len(self.getNodes())):
-            self.setDelta(j, target[j] - self.getAct(j))
-        for j in reversed(range(len(self.getNodes()) - len(target))):
-            self.calcDeltaP(j)
-            self.calcDeltaG(j)
-            self.setDelta(j, self.getDeltaP(j) + self.getDeltaG(j))
-        self.updateWeights(learnRate)
+                layerData.append([int(args[0]), int(args[1])])
+        firstOutput = numInputs + 4 * max(blockData)[0] + 4
+        specData[:] = [specData[0][:2]]
+        for outputUnit in range(firstOutput, firstOutput + numOutputs):
+            if inputToOutput == "1":
+                for inputUnit in range(lastInput):
+                    addConnection(outputUnit, inputUnit)
+            if biasOutput == "1":
+                addConnection(outputUnit, lastInput)
+        for memoryBlock, receiveInput, sendToOutput, biased in blockData:
+            inputGate, forgetGate, memoryCell, outputGate = unitsInBlock(memoryBlock)
+            if receiveInput == "1":
+                for inputUnit in range(lastInput):
+                    for unit in [inputGate, forgetGate, outputGate]:
+                        addConnection(unit, inputUnit)
+                    addConnection(memoryCell, inputUnit, inputGate)
+            if sendToOutput == "1":
+                for outputUnit in range(firstOutput, firstOutput + numOutputs):
+                    addConnection(outputUnit, memoryCell, outputGate)
+            if biased == "1":
+                for unit in [inputGate, memoryCell, forgetGate, outputGate]:
+                    addConnection(unit, lastInput)
+            specData.append([str(memoryCell), str(memoryCell), "1", str(forgetGate)])
+        for toBlock, fromBlock, connectionType in connections:
+            toIGate, toFGate, toMCell, toOGate = unitsInBlock(toBlock)
+            fromIGate, fromFGate, fromMCell, fromOGate = unitsInBlock(fromBlock)
+            for toUnit in [toIGate, toFGate, toOGate]:
+                if connectionType == "1":
+                    fromOGate = 0
+                addConnection(toUnit, fromMCell, fromOGate)
+            if connectionType == "2":
+                addConnection(toMCell, fromMCell, toIGate)
+    def __init__(self, specString):
+        specData = []
+        for line in specString.splitlines():
+            if line.strip() != "":
+                specData.append([arg.strip() for arg in line.split(",")])
+        if len(specData[0]) > 2:
+            self.toLowLevel(specData)
+        self.build(specData)
+    def toString(self, newNetwork, newline=os.linesep):
+        specString = str(self.numInputs) + ", " + str(self.numOutputs)
+        for (j, i), w in sorted(self.weight.items()):
+            specString += newline + str(j) + ", " + str(i) + ", " + repr(w) + ", -1"
+            if (j, i) in self.gater:
+                specString = specString[:-2] + str(self.gater[j, i])
+        if not newNetwork:
+            for j, s in sorted(self.state.items()):
+                specString += newline + str(j) + ", " + repr(s)
+            for (j, i), t in sorted(self.trace.items()):
+                specString += newline + str(j) + ", " + str(i) + ", " + repr(t)
+            for (j, i, k), e in sorted(self.extendedTrace.items()):
+                specString += newline + str(j) + ", " + str(i) + ", " + str(k) + ", " + repr(e)
+        return specString
+    def step(self, inputs):
+        for j in range(self.numInputs):
+            self.activation[j] = inputs[j]
+        oldState, oldActivation, oldGain = self.state.copy(), {}, {}
+        for j in sorted(self.state):
+            oldGain[j] = self.gain(j, j)
+            self.state[j] *= oldGain[j]
+            bias = 0
+            for (l, i), t in self.trace.items():
+                if l == j:
+                    oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
+                    if i >= self.numInputs or (j, i) in self.gater:
+                        self.state[j] += oldGain[j, i] * self.weight[j, i] * self.activation[i]
+                        self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * self.activation[i]
+                    else:
+                        bias = self.trace[j, i] = self.activation[i]
+            self.activation[j] = self.actFunc(self.state[j], False, bias)
+        for (j, i, k), e in self.extendedTrace.items():
+            terms = self.trace[j, i] * self.theTerm(j, k, oldState, oldActivation)
+            self.extendedTrace[j, i, k] = oldGain[k] * e + self.actFunc(oldState[j], True) * terms
+        return [self.activation[j] for j in range(self.numUnits - self.numOutputs, self.numUnits)]
+    def getError(self, targets):
+        error = 0
+        for j in range(self.numUnits - self.numOutputs, self.numUnits):
+            t, y = targets[j + self.numOutputs - self.numUnits], self.activation[j]
+            error += t * math.log(y, 2) + (1 - t) * math.log(1 - y, 2)
+        return error
+    def learn(self, targets, learningRate=.1):
+        errorProj, errorResp = {}, {}
+        for j in range(self.numUnits - self.numOutputs, self.numUnits):
+            errorResp[j] = targets[j + self.numOutputs - self.numUnits] - self.activation[j]
+        for j in reversed(range(self.numInputs, self.numUnits - self.numOutputs)):
+            errorProj[j] = errorResp[j] = 0
+            for k, l in self.trace:
+                if l == j and j < k:
+                    errorProj[j] += errorResp[k] * self.gain(k, j) * self.weight[k, j]
+            errorProj[j] *= self.actFunc(self.state[j], True)
+            lastK = 0
+            for k, a in sorted(self.gater):
+                if lastK < k and j < k and j == self.gater[k, a]:
+                    lastK = k
+                    errorResp[j] += errorResp[k] * self.theTerm(j, k, self.state, self.activation)
+            errorResp[j] = errorProj[j] + self.actFunc(self.state[j], True) * errorResp[j]
+        for (j, i), t in self.trace.items():
+            self.weight[j, i] += learningRate * errorResp[j] * t
+            if j < self.numUnits - self.numOutputs:
+                self.weight[j, i] += learningRate * (errorProj[j] - errorResp[j]) * t
+                for (l, m, k), e in self.extendedTrace.items():
+                    if l == j and m == i:
+                        self.weight[j, i] += learningRate * errorResp[k] * e
