@@ -79,7 +79,7 @@ Of course, one is free to try less conventional architectures (or modifications 
 
 Algorithm
 
-Alorithm.png contains most of the paper's details about how LSTM-g networks work, but neither the image nor the paper mention everything. This section is supplementary and hopefully understandable to those unfamiliar with neural networks; much of this is restating the paper's equations in words.
+Algorithm.png contains most of the paper's details about how LSTM-g networks work, but neither the image nor the paper mention everything. This section is supplementary and hopefully understandable to those unfamiliar with neural networks; much of this is restating the paper's equations in words.
 
 A network consists of connected units: one or more input units, zero or more hidden units, and one or more output units. Each unit is referred to or indexed by a number, and the units have a fixed order of activation (see the next paragraph) over those numbers; input units are activated first, and output units are activated last. Each unit has a state, an activation, and a nonlinear, everywhere-differentiable function from states to activations called an activation function, with the exception of input units, which only need an activation. A connection is directed; that is, it is an output or outgoing connection for the sending unit and an input or incoming connection for the receiving unit. A connection has a weight, a gain, and may additionally be gated by a unit associated with it called the gating unit or gater. A connection's gain is a constant 1 if it is ungated, and equal to the most recent gater activation otherwise (Eq. 14 in the paper).
 
