@@ -111,7 +111,7 @@ LSTM networks can have multiple memory cells per memory block. Nothing in the LS
 
 Updating traces and extended traces is optional and unnecessary if the network's weights will never be adjusted again. Other optimizations are possible (see Library).
 
-(paraphrased from Monner) XLBP's PiLayer allows connections to be gated by multiple units. The normal case is for PiLayer to have two inputs: the source of the connection and its gater. PiLayer avoids this distinction, since the source and gater activation are mathematically interchangeable. A PiLayer with three inputs is like having a source and two gates. You can look at how it does the math for calculating the error responsibilities and work backward from there to get the general equation. In the original case you have a connection from unit S gated by G1, and your error responsibility for each unit changes as follows (note the primes denoting derivatives):
+(paraphrased from Monner) XLBP's PiLayer allows connections to be gated by multiple units. The normal case is for PiLayer to have two inputs: the source of the connection and its gater. PiLayer avoids this distinction, since the source and gater activations are mathematically interchangeable. A PiLayer with three inputs (for example) is like having a source and two gates. You can look at how it does the math for calculating the error responsibilities and work backward from there to get the general equation. In the original case you have a connection from unit S gated by G1, and your error responsibility for each unit changes as follows (note the primes denoting derivatives):
 
 error(S) *= f'(S) * f(G1)
 error(G1) *= f(S) * f'(G1)
