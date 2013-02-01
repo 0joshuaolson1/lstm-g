@@ -91,7 +91,7 @@ class LSTM_g:
                 for outputUnit in range(firstOutput, firstOutput + numOutputs):
                     addConnection(outputUnit, memoryCell, outputGate)
             if biased == "1":
-                for unit in [inputGate, memoryCell, forgetGate, outputGate]:
+                for unit in unitsInBlock(memoryBlock):
                     addConnection(unit, lastInput)
             specData.append([str(memoryCell), str(memoryCell), "1", str(forgetGate)])
         for toBlock, fromBlock, connectionType in connections:
