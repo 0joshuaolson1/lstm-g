@@ -105,7 +105,7 @@ Missing Features
 
 The only activation function used in the code is the classic logistic sigmoid, with a range of (0, 1). Units do not have to share the same activation function, but the activation functions of output units must still have a range of (0, 1). Furthermore, LSTM memory cells actually have two activation functions: the input and output squashing functions. The paper takes all input squashing functions to be the identity and simply refers to output squashing functions as activation functions, but they can be manually added to any network in the following way. Insert a unit (with the desired activation function) between the memory cell and what used to be its direct inputs (excluding the self-connection, which remains unchanged). The memory cell's input gate gates the single connection between the input squashing unit and the memory cell, instead of gating the memory cell's former inputs.
 
-One could instead wrap the second term of the state formula (the summation in Eq. 15) with the desired function. While this isn't equivalent to LSTM, that doesn't mean it couldn't work (paraphrased from Monner).
+One could instead wrap the second term of the state formula (the summation in Eq. 15) with the desired function. While not equivalent to LSTM, it might work (paraphrased from Monner).
 
 LSTM networks can have multiple memory cells per memory block. Nothing in the LSTM-g formalism needs to be changed for architectures like this to work.
 
