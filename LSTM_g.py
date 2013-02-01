@@ -98,8 +98,8 @@ class LSTM_g:
             toIGate, toFGate, toMCell, toOGate = unitsInBlock(toBlock)
             fromIGate, fromFGate, fromMCell, fromOGate = unitsInBlock(fromBlock)
             for toUnit in [toIGate, toFGate, toOGate]:
-                if connectionType == "1":
-                    fromOGate = 0
+                if connectionType == "0":
+                    fromOGate = -1
                 addConnection(toUnit, fromMCell, fromOGate)
             if connectionType == "2":
                 addConnection(toMCell, fromMCell, toIGate)
