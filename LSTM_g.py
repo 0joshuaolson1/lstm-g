@@ -60,8 +60,8 @@ class LSTM_g:
                     return range(offset, offset + 4 * layerSize, layerSize)
             return range(numInputs + 4 * blockNum, numInputs + 4 * blockNum + 4, 4)
         numInputs, numOutputs = int(specData[0][0]), int(specData[0][1])
-        inputToOutput, biasOutput = int(specData[0][2]), int(specData[0][3])
-        lastInput = numInputs - int(biasOutput)
+        inputToOutput, biasOutput = specData[0][2], int(specData[0][3])
+        lastInput = numInputs - biasOutput
         blockData, connections, layerData = [], [], []
         for args in specData[1:]:
             if len(args) > 3:
@@ -69,7 +69,7 @@ class LSTM_g:
                 if args[3] == "1":
                     lastInput = numInputs - 1
             elif len(args) > 2:
-                connections.append([int(args[0]), int(args[1]), args[2]])
+                connections.append([int(args[0]), int(args[1]), int(args[2])])
             else:
                 layerData.append([int(args[0]), int(args[1])])
         firstOutput = numInputs + 4 * max(blockData)[0] + 4
@@ -78,7 +78,7 @@ class LSTM_g:
             if inputToOutput == "1":
                 for inputUnit in range(lastInput):
                     addConnection(outputUnit, inputUnit)
-            if biasOutput == "1":
+            if biasOutput > 0:
                 addConnection(outputUnit, lastInput)
         for memoryBlock, receiveInput, sendToOutput, biased in blockData:
             inputGate, forgetGate, memoryCell, outputGate = unitsInBlock(memoryBlock)
@@ -98,10 +98,10 @@ class LSTM_g:
             toIGate, toFGate, toMCell, toOGate = unitsInBlock(toBlock)
             fromIGate, fromFGate, fromMCell, fromOGate = unitsInBlock(fromBlock)
             for toUnit in [toIGate, toFGate, toOGate]:
-                if connectionType == "0":
+                if connectionType < 1:
                     fromOGate = -1
                 addConnection(toUnit, fromMCell, fromOGate)
-            if connectionType == "2":
+            if connectionType > 1:
                 addConnection(toMCell, fromMCell, toIGate)
     def __init__(self, specString):
         specData = []
