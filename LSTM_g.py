@@ -14,15 +14,15 @@ class LSTM_g:
             return 1
         return 0
     def theTerm(self, j, k, state, activation):
-            term = 0
-            if (k, k) in self.gater and j == self.gater[k, k]:
-                term = state[k]
-            for l, a in self.gater:
-                if l == k and a != k and j == self.gater[k, a] and activation is self.activation:
-                    term += self.weight[k, a] * activation[a]
-                elif l == k and a != k and j == self.gater[k, a]:
-                    term += self.weight[k, a] * activation[k, a]
-            return term
+        term = 0
+        if (k, k) in self.gater and j == self.gater[k, k]:
+            term = state[k]
+        for l, a in self.gater:
+            if l == k and a != k and j == self.gater[k, a] and activation is self.activation:
+                term += self.weight[k, a] * activation[a]
+            elif l == k and a != k and j == self.gater[k, a]:
+                term += self.weight[k, a] * activation[k, a]
+        return term
     def build(self, specData):
         self.state, self.activation, self.weight, self.gater = {}, {}, {}, {}
         self.trace, self.extendedTrace = {}, {}
