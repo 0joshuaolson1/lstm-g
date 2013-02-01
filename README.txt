@@ -126,6 +126,6 @@ So every error responsibility for each unit gets multiplied by the product of al
 
 Other Omissions from the Paper
 
-All non-input units in the experiments in the paper were biased with a constant value of 1, and these bias connections were not included in the reported numbers of weights.
+All non-input units in the experiments in the paper were biased with a constant value of 1, and these bias connections were included in the reported numbers of weights.
 
 The cross-entropy error function in the paper uses base-2 logarithms. However, using a different base would only scale the function by a linear factor, so it does not really matter. This error measure was added to the library as a demonstration, but other functions work as well.
