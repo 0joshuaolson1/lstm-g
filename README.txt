@@ -99,7 +99,7 @@ Note that while the paper says that target values and output unit activations mu
 
 Biases, specifically bias connections from bias units to other units, are treated like connections from input units with one exception. Like input units, bias states are unneeded. Like other biases, memory cell biases are ungated. The exception is that bias activations are not included in the state calculations of self-connected units. Instead, the unit's activation function is passed the sum of the current bias value and the unit's state. Because the bias is applied later, the connection's trace is specially defined as the bias unit's most recent activation. Note that this library's code assumes that an ungated connection from an input unit to a self-connected unit is a memory cell bias.
 
-Monner has found that alternatives to the basic weight updating function, such as momentum, are not useful; LSTM seems to be pretty optimal on its own. Momentum (and batch training for that matter) may not even make sense in the context of LSTM. However, using different learning rates for different backward passes as in learning rate decay or alpha stepping does make sense.
+Monner has found that alternatives to the basic weight updating function, such as momentum, are not useful; LSTM seems to be pretty optimal on its own. Momentum (and batch training/offine learning for that matter) may not even make sense in the context of LSTM. However, using different learning rates for different backward passes as in learning rate decay or alpha stepping does make sense.
 
 Missing Features
 
