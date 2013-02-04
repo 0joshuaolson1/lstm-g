@@ -253,27 +253,65 @@ class LSTM_g:
                 specString += newline + str(j) + ", " + str(i) + ", " + str(k) + ", " + repr(e)
         return specString
 
-#this method to be commented soon
+#given a list of input values, does a forward pass and returns a list of output unit activations
+#calculates states (and activations from those) in the order of activation, while caching values
+#cached values are used in trace and extended trace updates
     def step(self, inputs):
+
+#input unit activations come directly from inputs
         for j in range(self.numInputs):
             self.activation[j] = inputs[j]
+
+#cached states are just the states copied from the last time step, but the others are cached below
         oldState, oldActivation, oldGain = self.state.copy(), {}, {}
+
+#units are indexed by order of activation
         for j in sorted(self.state):
+
+#cached self-connection gain
             oldGain[j] = self.gain(j, j)
+
+#first term in Eq. 15
             self.state[j] *= oldGain[j]
+
+#will be used if j is a self-connected unit with an ungated connection from an input unit
             bias = 0
+
+#loops through units with connections to j (i != j for traces) for the second term in Eq. 15
+#order does not matter
             for (l, i), t in self.trace.items():
                 if l == j:
+
+#oldActivation's first parameter is the unit denoting the "time" the value is cached
+#the same applies to oldGain, but j is already needed
                     oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
-                    if i >= self.numInputs or (j, i) in self.gater:
+
+#if j does not receive a bias connection from i (gain is 0 if not self-connected)
+                    if oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater:
+
+#the inner part of the second term in Eq. 15
                         self.state[j] += oldGain[j, i] * self.weight[j, i] * self.activation[i]
+
+#Eq. 17
+#might as well update traces in the same loop (the cached activation could equivalently be used)
                         self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * self.activation[i]
+
+#else the bias term in the activation function is used and the trace is specially defined
                     else:
                         bias = self.trace[j, i] = self.activation[i]
+
+#Eq. 16
             self.activation[j] = self.actFunc(self.state[j], False, bias)
+
+#Eq. 18
+#the order extended traces are calculated does not matter, but the trace used must be current
         for (j, i, k), e in self.extendedTrace.items():
             terms = self.trace[j, i] * self.theTerm(j, k, oldState, oldActivation)
+
+#True means the derivative of the activation function is used
             self.extendedTrace[j, i, k] = oldGain[k] * e + self.actFunc(oldState[j], True) * terms
+
+#returns network output
         return [self.activation[j] for j in range(self.numUnits - self.numOutputs, self.numUnits)]
 
 #cross-entropy gives an error difference between target values and the output units' activations
@@ -282,31 +320,61 @@ class LSTM_g:
         for j in range(self.numUnits - self.numOutputs, self.numUnits):
             t, y = targets[j + self.numOutputs - self.numUnits], self.activation[j]
 
-#base-2 logarithms
+#base 2 logarithms
             error += t * math.log(y, 2) + (1 - t) * math.log(1 - y, 2)
+
         return error
 
-#this method to be commented soon
+#given a list of target values, does a backward pass and adjusts weights with the learning rate
     def learn(self, targets, learningRate=.1):
+
+#projected responsibility and (full) responsibility respectively
         errorProj, errorResp = {}, {}
+
+#Eq. 10
         for j in range(self.numUnits - self.numOutputs, self.numUnits):
             errorResp[j] = targets[j + self.numOutputs - self.numUnits] - self.activation[j]
+
+#error responsibilities are calculated in the reverse order of activation
         for j in reversed(range(self.numInputs, self.numUnits - self.numOutputs)):
+
+#preparation for their sums in Eqs. 21 and 22
+#gating responsibility will be temporarily stored in errorResp, since it is only used in Eq. 23
             errorProj[j] = errorResp[j] = 0
+
+#summation in Eq. 21, looping through P_j (Eq. 19)
             for k, l in self.trace:
                 if l == j and j < k:
                     errorProj[j] += errorResp[k] * self.gain(k, j) * self.weight[k, j]
+
             errorProj[j] *= self.actFunc(self.state[j], True)
+
+#summation in Eq. 22, looping through G_j (Eq. 20) and making sure no k is repeated
             lastK = 0
             for k, a in sorted(self.gater):
                 if lastK < k and j < k and j == self.gater[k, a]:
                     lastK = k
                     errorResp[j] += errorResp[k] * self.theTerm(j, k, self.state, self.activation)
+
+#Eq. 23, but the gating responsibility had not yet been multipled by the activation derivative
             errorResp[j] = errorProj[j] + self.actFunc(self.state[j], True) * errorResp[j]
+
+#Eq. 24
+#non-self-connection weight changes can be in any order once the responsibilities used are known
         for (j, i), t in self.trace.items():
+
+#Eq. 13, assuming j is an output unit
             self.weight[j, i] += learningRate * errorResp[j] * t
+
+#but that assumption is probably false
             if j < self.numUnits - self.numOutputs:
+
+#first term in Eq. 24, subtracting Eq. 13 since j is not an output unit
                 self.weight[j, i] += learningRate * (errorProj[j] - errorResp[j]) * t
+
+#another way to loop through G_j, when i is fixed
                 for (l, m, k), e in self.extendedTrace.items():
                     if l == j and m == i:
+
+#second term in Eq. 24
                         self.weight[j, i] += learningRate * errorResp[k] * e
