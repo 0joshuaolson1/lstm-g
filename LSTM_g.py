@@ -151,14 +151,14 @@ class LSTM_g:
                 layerData.append([int(args[0]), int(args[1])])
 
 #blockData is a list of lists, but max gives the list with the largest first entry
-        firstOutput = numInputs + 4 * max(blockData)[0] + 4
+        numUnits = numInputs + 4 * max(blockData)[0] + 4 + numOutputs
 
 #the first two parameters in the high-level list's first line make the low-level list's first line
 #[:] prevents the creation of a local copy instead
         specData[:] = [specData[0][:2]]
 
 #connections to output units
-        for outputUnit in range(firstOutput, firstOutput + numOutputs):
+        for outputUnit in range(numUnits - numOutputs, numUnits):
 
 #connections from input units
             if inputToOutput == "1":
@@ -185,7 +185,7 @@ class LSTM_g:
 
 #connections to output units, all gated by the output gate
             if sendToOutput == "1":
-                for outputUnit in range(firstOutput, firstOutput + numOutputs):
+                for outputUnit in range(numUnits - numOutputs, numUnits):
                     addConnection(outputUnit, memoryCell, outputGate)
 
 #biases for memory block units
