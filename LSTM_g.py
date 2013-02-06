@@ -9,7 +9,7 @@ class LSTM_g:
 #the bias (0 if omitted) is needed for memory cell biases, which are not added to the state directly
 #Python requires "self" as the first parameter of class methods
     def actFunc(self, s, derivative, bias=0):
-        value = 1 / (1 + math.exp(bias - s))
+        value = 1 / (1 + math.exp(-s - bias))
         if derivative:
             value *= 1 - value
         return value
