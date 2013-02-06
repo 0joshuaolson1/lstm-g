@@ -105,10 +105,9 @@ class LSTM_g:
 #automatic building changes the high-level list of parameter lists into what build can use
     def toLowLevel(self, specData):
 
-        def addConnection(j, i, g=-1):
-
 #adds a list of connection information to the end of specData
 #repr is used so that the weight (in [-.1, .1]) converts back to the same float in manual building
+        def addConnection(j, i, g=-1):
             specData.append([str(j), str(i), repr(random.uniform(-.1, .1)), str(g)])
 
 #gives the indices of units in a memory block, checking if blockNum falls in a layer grouping
