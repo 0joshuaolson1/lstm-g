@@ -69,7 +69,7 @@ step(inputs) takes a list of input data with a length equal to numInputs as spec
 
 getError(targets) returns the difference between the most recent output unit activations and the given list of target data. This cross-entropy error function is from Eq. 9 in the paper.
 
-learn(self, targets[, learningRate]) adjusts the network's weights using the most recent output unit activations and the given list of target data. If the learning rate is not specified, 0.1 is used as in the experiments in the paper.
+learn(targets[, learningRate]) adjusts the network's weights using the most recent output unit activations and the given list of target data. If the learning rate is not specified, 0.1 is used as in the experiments in the paper.
 
 Call the step method at least once before calling the learn method; input unit activations are not provided by the class constructor (see Usage - Manual Building) and are undefined until they are given input data. Training works by calling the step method one or more times (possible because the information used to calculate weight changes is updated every time step) and then calling the learn method exactly once. There is no reason to call the learn method twice in a row, and the second time would use the wrong weights in its calculations.
 
