@@ -1,12 +1,11 @@
-#175 lines not including comments and empty lines, which can obviously be removed
-#no line is longer than 99 characters - sorry if you wanted 80
+#177 lines not including comments and empty lines, which can obviously be removed
 #comments assume unfamiliarity with Python 2.7.3
 
 import math, random, os
 class LSTM_g:
 
 #the activation function used is the logistic sigmoid, with range (0, 1) and a neat derivative
-#the bias (0 if omitted) is needed for memory cell biases, which are not added to the state directly
+#the bias (0 if omitted) is for memory cell biases, which are not added to the state directly
 #Python requires "self" as the first parameter of class methods
     def actFunc(self, s, derivative, bias=0):
         value = 1 / (1 + math.exp(-s - bias))
@@ -17,16 +16,14 @@ class LSTM_g:
 #Eq. 14
     def gain(self, j, i):
 
-#"in" checks if (j, i) is a key in the network's global associative array named gater
-#Python's associative arrays are called dictionaries
+#"in" checks if (j, i) is a key in the network's dictionary (associative array) named gater
         if (j, i) in self.gater:
             return self.activation[self.gater[j, i]]
 
         if (j, i) in self.weight:
             return 1
 
-#returns 0 if w_ji does not exist because gain appears in equations next to weights for
-#    self-connections that may not exist (i.e. are 0)
+#returns 0 if there is no w_ji to account for nonexistent self-connections (Eqs. 15, 17, and 18)
         return 0
 
 #the part of Eqs. 18 and 22 in parentheses
@@ -270,6 +267,12 @@ class LSTM_g:
 #cached self-connection gain
             oldGain[j] = self.gain(j, j)
 
+            for l, i in self.trace:
+                if l == j:
+
+#oldActivation's first parameter is the unit denoting the "time" the value is cached
+                    oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
+
 #first term in Eq. 15
             self.state[j] *= oldGain[j]
 
@@ -277,16 +280,10 @@ class LSTM_g:
             bias = 0
 
 #loops through units with connections to j (i != j for traces) for the second term in Eq. 15
-#order does not matter
             for (l, i), t in self.trace.items():
-                if l == j:
-
-#oldActivation's first parameter is the unit denoting the "time" the value is cached
-#the same applies to oldGain, but j is already needed
-                    oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
 
 #if j does not receive a bias connection from i (gain is 0 if not self-connected)
-                    if oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater:
+                    if l == j and oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater:
 
 #the inner part of the second term in Eq. 15
                         self.state[j] += oldGain[j, i] * self.weight[j, i] * self.activation[i]
@@ -296,7 +293,7 @@ class LSTM_g:
                         self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * self.activation[i]
 
 #else the bias term in the activation function is used and the trace is specially defined
-                    else:
+                    elif l == j:
                         bias = self.trace[j, i] = self.activation[i]
 
 #Eq. 16
@@ -362,18 +359,17 @@ class LSTM_g:
 #non-self-connection weight changes can be in any order once the responsibilities used are known
         for (j, i), t in self.trace.items():
 
-#Eq. 13, assuming j is an output unit
-            self.weight[j, i] += learningRate * errorResp[j] * t
-
-#but that assumption is probably false
+#if j is not an output unit
             if j < self.numUnits - self.numOutputs:
 
-#first term in Eq. 24, subtracting Eq. 13 since j is not an output unit
-                self.weight[j, i] += learningRate * (errorProj[j] - errorResp[j]) * t
+#first term in Eq. 24
+                self.weight[j, i] += learningRate * errorProj[j] * t
 
-#another way to loop through G_j, when i is fixed
+#second term in Eq. 24 (this is another way to loop through G_j, when i is fixed)
                 for (l, m, k), e in self.extendedTrace.items():
                     if l == j and m == i:
-
-#second term in Eq. 24
                         self.weight[j, i] += learningRate * errorResp[k] * e
+
+#else Eq. 13, since j is an output unit
+            else:
+                self.weight[j, i] += learningRate * errorResp[j] * t
