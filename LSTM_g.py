@@ -33,14 +33,15 @@ class LSTM_g:
             term = state[k]
 
 #for all dictionary keys meeting the properties checked for below
-#this is a common technique in the code, which is slow but clear
+#this is a common technique in the code, which is slow but clear and simple
         for l, a in self.gater:
+            if l == k and a != k and j == self.gater[k, a]:
 
 #checks if the given activations are the current ones, because the cached ones take two parameters
-            if l == k and a != k and j == self.gater[k, a] and activation is self.activation:
-                term += self.weight[k, a] * activation[a]
-            elif l == k and a != k and j == self.gater[k, a]:
-                term += self.weight[k, a] * activation[k, a]
+                if activation is self.activation:
+                    term += self.weight[k, a] * activation[a]
+                else:
+                    term += self.weight[k, a] * activation[k, a]
 
         return term
 
@@ -280,24 +281,24 @@ class LSTM_g:
 
 #loops through units with connections to j (i != j for traces) for the second term in Eq. 15
             for (l, i), t in self.trace.items():
+                if l == j:
 
-#if j does not receive a bias connection from i (j is not self-connected if the gain on j, j is 0)
-                if l == j and (oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater):
+#if j, i is a bias connection, activation uses the bias term and the trace is specially defined
+                    if (j, j) in self.weight and i < self.numInputs and (j, i) not in self.gater:
+                        bias = self.trace[j, i] = self.activation[i]
+
+                    else:
 
 #the inner part of the second term in Eq. 15
-                    self.state[j] += self.gain(j, i) * self.weight[j, i] * self.activation[i]
+                        self.state[j] += self.gain(j, i) * self.weight[j, i] * self.activation[i]
 
 #Eq. 17 (might as well update traces in the same loop)
-                    self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * oldActivation[j, i]
-
-#else the bias term in the activation function is used and the trace is specially defined
-                elif l == j:
-                    bias = self.trace[j, i] = self.activation[i]
+                        self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * oldActivation[j, i]                        
 
 #Eq. 16
             self.activation[j] = self.actFunc(self.state[j], False, bias)
 
-#Eq. 18 (the trace used in any extended trace calculation must be current)
+#Eq. 18
         for (j, i, k), e in self.extendedTrace.items():
             terms = self.trace[j, i] * self.theTerm(j, k, oldState, oldActivation)
 
@@ -352,7 +353,7 @@ class LSTM_g:
 #Eq. 23, but the gating responsibility had not yet been multipled by the activation derivative
             errorResp[j] = errorProj[j] + self.actFunc(self.state[j], True) * errorResp[j]
 
-#Eq. 24 (weight changes can be in any order once the responsibilities used are known)
+#Eq. 24
         for (j, i), t in self.trace.items():
 
 #if j is not an output unit
