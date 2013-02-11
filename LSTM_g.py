@@ -1,5 +1,4 @@
-#177 lines not including comments and empty lines, which can obviously be removed
-#comments assume unfamiliarity with Python 2.7.3
+#comments assume unfamiliarity with Python 2.7.3, and can obviously be removed
 
 import math, random, os
 class LSTM_g:
@@ -274,7 +273,7 @@ class LSTM_g:
                     oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
 
 #first term in Eq. 15
-            self.state[j] *= oldGain[j]
+            self.state[j] *= self.gain(j, j)
 
 #will be used if j is a self-connected unit with an ungated connection from an input unit
             bias = 0
@@ -282,25 +281,23 @@ class LSTM_g:
 #loops through units with connections to j (i != j for traces) for the second term in Eq. 15
             for (l, i), t in self.trace.items():
 
-#if j does not receive a bias connection from i (gain is 0 if not self-connected)
-                    if l == j and oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater:
+#if j does not receive a bias connection from i (j is not self-connected if the gain on j, j is 0)
+                if l == j and (oldGain[j] == 0 or i >= self.numInputs or (j, i) in self.gater):
 
 #the inner part of the second term in Eq. 15
-                        self.state[j] += oldGain[j, i] * self.weight[j, i] * self.activation[i]
+                    self.state[j] += self.gain(j, i) * self.weight[j, i] * self.activation[i]
 
-#Eq. 17
-#might as well update traces in the same loop (the cached activation could equivalently be used)
-                        self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * self.activation[i]
+#Eq. 17 (might as well update traces in the same loop)
+                    self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * oldActivation[j, i]
 
 #else the bias term in the activation function is used and the trace is specially defined
-                    elif l == j:
-                        bias = self.trace[j, i] = self.activation[i]
+                elif l == j:
+                    bias = self.trace[j, i] = self.activation[i]
 
 #Eq. 16
             self.activation[j] = self.actFunc(self.state[j], False, bias)
 
-#Eq. 18
-#the order extended traces are calculated does not matter, but the trace used must be current
+#Eq. 18 (the trace used in any extended trace calculation must be current)
         for (j, i, k), e in self.extendedTrace.items():
             terms = self.trace[j, i] * self.theTerm(j, k, oldState, oldActivation)
 
@@ -355,8 +352,7 @@ class LSTM_g:
 #Eq. 23, but the gating responsibility had not yet been multipled by the activation derivative
             errorResp[j] = errorProj[j] + self.actFunc(self.state[j], True) * errorResp[j]
 
-#Eq. 24
-#non-self-connection weight changes can be in any order once the responsibilities used are known
+#Eq. 24 (weight changes can be in any order once the responsibilities used are known)
         for (j, i), t in self.trace.items():
 
 #if j is not an output unit
