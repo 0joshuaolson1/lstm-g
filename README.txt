@@ -133,3 +133,5 @@ Other Omissions from the Paper
 All non-input units in the experiments in the paper were biased with a constant value of 1, and these bias connections were not included in the reported numbers of weights (nor were self-connections, for that matter).
 
 The cross-entropy error function in the paper uses base-2 logarithms. However, using a different base would only scale the function by a linear factor, so it does not really matter. This error measure was added to the library as a demonstration, but other functions work as well.
+
+LSTM with BPTT does use the full gradient (see http://www.cs.toronto.edu/~graves/nn_2005.pdf, for example), and this seems to be the norm in more recent LSTM research. Thanks to Alex Graves for pointing this out.
