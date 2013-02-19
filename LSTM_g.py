@@ -12,7 +12,7 @@ class LSTM_g:
             value *= 1 - value
         return value
 
-#Eq. 14
+#Eq. 14 (returns 0 if no w_ji to account for nonexistent self-connections (Eqs. 15, 17, and 18))
     def gain(self, j, i):
 
 #"in" checks if (j, i) is a key in the network's dictionary (associative array) named gater
@@ -21,28 +21,19 @@ class LSTM_g:
 
         if (j, i) in self.weight:
             return 1
-
-#returns 0 if there is no w_ji to account for nonexistent self-connections (Eqs. 15, 17, and 18)
         return 0
 
 #the part of Eqs. 18 and 22 in parentheses
-#cached states and activations are used for extended traces, and current ones for responsibilities
-    def theTerm(self, j, k, state, activation):
+    def theTerm(self, j, k):
         term = 0
         if (k, k) in self.gater and j == self.gater[k, k]:
-            term = state[k]
+            term = self.oldState[k]
 
-#for all dictionary keys meeting the properties checked for below
-#this is a common technique in the code, which is slow but clear and simple
+#for all dictionary keys (that have the properties checked for below)
+#this is a common technique in the code, which is slow but simple
         for l, a in self.gater:
             if l == k and a != k and j == self.gater[k, a]:
-
-#checks if the given activations are the current ones, because the cached ones take two parameters
-                if activation is self.activation:
-                    term += self.weight[k, a] * activation[a]
-                else:
-                    term += self.weight[k, a] * activation[k, a]
-
+                    term += self.weight[k, a] * self.oldActivation[k, a]
         return term
 
 #manual building takes a list of lists of string parameters, otherwise in the format in the readme
@@ -111,9 +102,8 @@ class LSTM_g:
         def unitsInBlock(blockNum):
             for firstBlockInLayer, layerSize in layerData:
 
-#Python requires both inequalities to be true
+#Python requires both inequalities to be true (linear search is simpler than binary search)
                 if 0 <= blockNum - firstBlockInLayer < layerSize:
-
                     offset = numInputs + 3 * firstBlockInLayer + blockNum
 
 #range gives an ordered list of numbers from the first parameter to just less than the second
@@ -121,9 +111,8 @@ class LSTM_g:
                     return range(offset, offset + 4 * layerSize, layerSize)
             return range(numInputs + 4 * blockNum, numInputs + 4 * blockNum + 4, 4)
 
-        numInputs, numOutputs = int(specData[0][0]), int(specData[0][1])
-
 #inputToOutput is only used once, so it can stay as a string
+        numInputs, numOutputs = int(specData[0][0]), int(specData[0][1])
         inputToOutput, biasOutput = specData[0][2], int(specData[0][3])
 
 #lastInput is the number of true input units, and also the index of the bias unit if there is one
@@ -251,7 +240,7 @@ class LSTM_g:
 
 #given a list of input values, does a forward pass and returns a list of output unit activations
 #calculates states (and activations from those) in the order of activation, while caching values
-#cached values are used in trace and extended trace updates
+#cached values are used in trace, extended trace, and responsibility calculations
     def step(self, inputs):
 
 #input unit activations come directly from inputs
@@ -259,19 +248,20 @@ class LSTM_g:
             self.activation[j] = inputs[j]
 
 #cached states are just the states copied from the last time step, but the others are cached below
-        oldState, oldActivation, oldGain = self.state.copy(), {}, {}
+        self.oldState, self.oldActivation, self.oldGain = self.state.copy(), {}, {}
 
 #units are indexed by order of activation
         for j in sorted(self.state):
 
 #cached self-connection gain
-            oldGain[j] = self.gain(j, j)
+            self.oldGain[j] = self.gain(j, j)
 
             for l, i in self.trace:
                 if l == j:
+                    self.oldGain[j, i] = self.gain(j, i)
 
 #oldActivation's first parameter is the unit denoting the "time" the value is cached
-                    oldActivation[j, i], oldGain[j, i] = self.activation[i], self.gain(j, i)
+                    self.oldActivation[j, i] = self.activation[i]
 
 #first term in Eq. 15
             self.state[j] *= self.gain(j, j)
@@ -280,30 +270,28 @@ class LSTM_g:
             bias = 0
 
 #loops through units with connections to j (i != j for traces) for the second term in Eq. 15
-            for (l, i), t in self.trace.items():
+            for l, i in self.trace:
                 if l == j:
 
 #if j, i is a bias connection, activation uses the bias term and the trace is specially defined
                     if (j, j) in self.weight and i < self.numInputs and (j, i) not in self.gater:
                         bias = self.trace[j, i] = self.activation[i]
 
-                    else:
-
 #the inner part of the second term in Eq. 15
+                    else:
                         self.state[j] += self.gain(j, i) * self.weight[j, i] * self.activation[i]
 
 #Eq. 17 (might as well update traces in the same loop)
-                        self.trace[j, i] = oldGain[j] * t + oldGain[j, i] * oldActivation[j, i]                        
+                        self.trace[j, i] *= self.oldGain[j]
+                        self.trace[j, i] += self.oldGain[j, i] * self.oldActivation[j, i]
 
 #Eq. 16
             self.activation[j] = self.actFunc(self.state[j], False, bias)
 
-#Eq. 18
-        for (j, i, k), e in self.extendedTrace.items():
-            terms = self.trace[j, i] * self.theTerm(j, k, oldState, oldActivation)
-
-#True means the derivative of the activation function is used
-            self.extendedTrace[j, i, k] = oldGain[k] * e + self.actFunc(oldState[j], True) * terms
+#Eq. 18 (True means the derivative of the activation function is used)
+        for j, i, k in self.extendedTrace:
+            terms = self.actFunc(self.oldState[j], True) * self.trace[j, i] * self.theTerm(j, k)
+            self.extendedTrace[j, i, k] = self.oldGain[k] * self.extendedTrace[j, i, k] + terms
 
 #returns network output
         return [self.activation[j] for j in range(self.numUnits - self.numOutputs, self.numUnits)]
@@ -339,28 +327,28 @@ class LSTM_g:
 #summation in Eq. 21, looping through P_j (Eq. 19)
             for k, l in self.trace:
                 if l == j and j < k:
-                    errorProj[j] += errorResp[k] * self.gain(k, j) * self.weight[k, j]
+                    errorProj[j] += errorResp[k] * self.oldGain[k, j] * self.weight[k, j]
 
-            errorProj[j] *= self.actFunc(self.state[j], True)
+            errorProj[j] *= self.actFunc(self.oldState[j], True)
 
 #summation in Eq. 22, looping through G_j (Eq. 20) and making sure no k is repeated
             lastK = 0
             for k, a in sorted(self.gater):
                 if lastK < k and j < k and j == self.gater[k, a]:
                     lastK = k
-                    errorResp[j] += errorResp[k] * self.theTerm(j, k, self.state, self.activation)
+                    errorResp[j] += errorResp[k] * self.theTerm(j, k)
 
 #Eq. 23, but the gating responsibility had not yet been multipled by the activation derivative
-            errorResp[j] = errorProj[j] + self.actFunc(self.state[j], True) * errorResp[j]
+            errorResp[j] = errorProj[j] + self.actFunc(self.oldState[j], True) * errorResp[j]
 
 #Eq. 24
-        for (j, i), t in self.trace.items():
+        for j, i in self.trace:
 
 #if j is not an output unit
             if j < self.numUnits - self.numOutputs:
 
 #first term in Eq. 24
-                self.weight[j, i] += learningRate * errorProj[j] * t
+                self.weight[j, i] += learningRate * errorProj[j] * self.trace[j, i]
 
 #second term in Eq. 24 (this is another way to loop through G_j, when i is fixed)
                 for (l, m, k), e in self.extendedTrace.items():
@@ -369,4 +357,4 @@ class LSTM_g:
 
 #else Eq. 13, since j is an output unit
             else:
-                self.weight[j, i] += learningRate * errorResp[j] * t
+                self.weight[j, i] += learningRate * errorResp[j] * self.trace[j, i]
