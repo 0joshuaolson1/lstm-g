@@ -33,7 +33,7 @@ class LSTM_g:
 #this is a common technique in the code, which is slow but simple
         for l, a in self.gater:
             if l == k and a != k and j == self.gater[k, a]:
-                    term += self.weight[k, a] * self.oldActivation[k, a]
+                term += self.weight[k, a] * self.oldActivation[k, a]
         return term
 
 #manual building takes a list of lists of string parameters, otherwise in the format in the readme
