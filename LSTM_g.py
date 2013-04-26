@@ -1,4 +1,4 @@
-#comments assume unfamiliarity with Python 2.7.3, and can obviously be removed
+#comments assume unfamiliarity with Python 2.7, and can obviously be removed
 
 import math, random, os
 class LSTM_g:
