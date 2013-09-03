@@ -18,7 +18,7 @@ Note that some languages may have more than one way to convert floating point nu
 
 I am working on a C program (https://github.com/MrMormon/lstm-g-hardcoder) that generates C/C++ headers with hardcoded networks for maximum platform-independent efficiency. The computational complexity is being improved over the loop-heavy methods used here, and calculated values are reused where possible. Maybe someone can try parallelizing it or utilizing cache memory or GPUs (although possible speedup is architecture-dependent). Or try other ideas, such as using tables of precomputed, interpolated activation function approximations, extending LSTM-g in ways that LSTM has been modified, or even getting a network working on an FPGA or neurocomputer...
 
-EDIT: To clarify, this library. The XOR and Distracted Sequence Recall examples (which I'm not sure are right) show that it doesn't yet perform as expected. I will be unavailable for communication until around June 2015 due to an ecclesiastical mission for The Church of Jesus Christ of Latter-day Saints, but any people who want to try debugging this can find each other through the public Generalized LSTM contact page (https://docs.google.com/document/d/1NVQKHK-fkigwzXcusX8EZaw-LvP-TJAQdhrN6ts_ORo/edit).
+EDIT: To clarify, this library. The XOR and Distracted Sequence Recall examples (which I'm not sure are right) show that it doesn't yet perform as expected. I will be unavailable for communication until around June 2015 due to an ecclesiastical mission for The Church of Jesus Christ of Latter-day Saints, but those who want to try debugging this can find each other through the public Generalized LSTM contact page (https://docs.google.com/document/d/1NVQKHK-fkigwzXcusX8EZaw-LvP-TJAQdhrN6ts_ORo/edit).
 
 *** Usage - Manual Building ***
 
@@ -66,8 +66,6 @@ If any memory blocks or the output units are biased, numInputs is not technicall
 *** Usage - API ***
 
 toString(newNetwork[, newline]) returns a string of the format used in manual building, except there are no blank lines, the only non-line-separator whitespace is a single space after each comma, and consecutive lines of the same format are sorted in ascending order, first by j, then by i, then by k (where applicable). If newNetwork is True, the states, traces, and extended traces are not included. Unless the newline string is given, the operating system's default line separator is used.
-
-clear() zeros the states, activations, traces, and extended traces.
 
 step(inputs, clearValues) takes a list of input data with a length equal to numInputs as specified in the string given to the class constructor (see the previous two sections). Input unit activations come directly from this, and then all other units are activated in order for a single time step. A list of the output units' activations is returned. If clearValues is True, states, activations, traces, and extended traces are first reset to zero (weights are unaffected).
 

@@ -140,7 +140,7 @@ class LSTM_g:
 #blockData is a list of lists, but max gives the list with the largest first entry
         numUnits = numInputs + 4 * max(blockData)[0] + 4 + numOutputs
 
-#the low-level list's first line is the first two parameters in the high-level list's first line 
+#the low-level list's first line is the first two parameters in the high-level list's first line
 #[:] prevents the creation of a local copy instead
         specData[:] = [specData[0][:2]]
 
