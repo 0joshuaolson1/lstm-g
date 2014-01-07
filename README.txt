@@ -18,7 +18,7 @@ Note that some languages may have more than one way to convert floating point nu
 
 I am working on a C program (https://github.com/MrMormon/lstm-g-hardcoder) that generates C/C++ headers with hardcoded networks for maximum platform-independent efficiency. The computational complexity is being improved over the loop-heavy methods used here, and calculated values are reused where possible. Maybe someone can try parallelizing it or utilizing cache memory or GPUs (although possible speedup is architecture-dependent). Or try other ideas, such as using tables of precomputed, interpolated activation function approximations, extending LSTM-g in ways that LSTM has been modified, or even getting a network working on an FPGA or neurocomputer...
 
-EDIT: To clarify, this library is unfinished. The XOR and Distracted Sequence Recall examples (which I'm not sure are right) show that it doesn't yet perform as expected. I won't do much LSTM-g work until I get over some depression problems, but those who want to try debugging this can find each other through the public Generalized LSTM contact page (https://docs.google.com/document/d/1NVQKHK-fkigwzXcusX8EZaw-LvP-TJAQdhrN6ts_ORo/edit).
+EDIT: To clarify, this library is unfinished. The XOR and Distracted Sequence Recall examples (which I'm not sure are right) show that it doesn't yet perform as expected. I won't do much LSTM-g work until I get over some depression problems, but those who want to try debugging this can find each other through the public Generalized LSTM contact page (https://docs.google.com/document/d/1NVQKHK-fkigwzXcusX8EZaw-LvP-TJAQdhrN6ts_ORo/edit). For anyone who wants to write their own XOR test, see XLBP's example/SequentialParity.java.
 
 *** Usage - Manual Building ***
 
@@ -124,7 +124,7 @@ Expanding to the two-gate case:
 
 error(S) *= f'(S) * f(G1) * f(G2)
 error(G1) *= f(S) * f'(G1) * f(G2)
-error(G1) *= f(S) * f(G1) * f'(G2)
+error(G2) *= f(S) * f(G1) * f'(G2)
 
 So every error responsibility for each unit gets multiplied by the product of all the other units, except itself, where it instead gets multiplied by the derivative.
 
