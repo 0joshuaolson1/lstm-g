@@ -106,12 +106,14 @@ class LSTM_g:
 
 #Python requires both inequalities to be true (linear search is simpler than binary search)
                 if 0 <= blockNum - firstBlockInLayer < layerSize:
+
+#offset = numInputs + 4 * firstBlockInLayer + blockNum - firstBlockInLayer
                     offset = numInputs + 3 * firstBlockInLayer + blockNum
 
 #range gives an ordered list of numbers from the first parameter to just less than the second
-#the third parameter determines the step size between entries
+#the third parameter determines the step size between entries (default is 1)
                     return range(offset, offset + 4 * layerSize, layerSize)
-            return range(numInputs + 4 * blockNum, numInputs + 4 * blockNum + 4, 4)
+            return range(numInputs + 4 * blockNum, numInputs + 4 * blockNum + 4)
 
 #inputToOutput is only used once, so it can stay as a string
         numInputs, numOutputs = int(specData[0][0]), int(specData[0][1])
