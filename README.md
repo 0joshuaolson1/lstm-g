@@ -23,13 +23,13 @@ I started a C utility (https://github.com/MrMormon/lstm-g-hardcoder) that genera
 *** Usage - Manual Building ***
 
 The class constructor LSTM_g(specString) takes a string in comma-separated values (csv) format, defining the number of input and output units, the connections between input, output, and hidden units, and the current weights and gating units of those connections. For a network that has been previously built and run, the states, eligibility traces, and extended eligibility traces can also be defined (normally taken from strings from the toString method - see Usage - API):
-
+```
 numInputs, numOutputs
 j, i, w, g
 [j, s
 j, i, t
 j, i, k, e]
-
+```
 Each line after the first represents any number of unordered consecutive lines of the same format. Blank lines are allowed anywhere, and any amount of non-line-separator whitespace is allowed before and after any comma or line (space after a comma is not required). j, i, and k refer to units, which are numbered by order of activation from 0 to (number of units - 1). The input and output units are 0 through (numInputs - 1) and (number of units - numOutputs) through (number of units - 1) respectively.
 
 The first line is self-explanatory.
@@ -45,12 +45,12 @@ In the fifth line, e is the extended trace for the combination of j, i, and k su
 *** Usage - Automatic Building ***
 
 The constructor also takes a csv string of the following high-level format, defining a new network with connections between input units, an optional bias unit, memory blocks, and output units. In addition, layer groupings can be specified in order to change the order of activation of units in adjacent memory blocks to match that of LSTM:
-
+```
 numInputs, numOutputs, inputToOutput, biasOutput
 memoryBlock, receiveInput, sendToOutput, biased
 [toBlock, fromBlock, connectionType]
 [firstBlockInLayer, layerSize]
-
+```
 Each line after the first represents any number of unordered consecutive lines of the same format, and the same freedoms of blank lines and whitespace as in manual building apply here. Memory blocks are numbered from 0 to (number of blocks - 1) by the order that their units are activated (see the fourth line's explanation for the exception to this). All connections from units to themselves have weights of 1, and non-self-connections have randomized weights in the range [-0.1, 0.1] (the paper uses [-0.1, 0.1) for its experiments, but Python's pseudorandom floats are documented as inclusive).
 
 In the first line, numInputs is the number of input units (unless there is a bias unit - see the last paragraph of this section), and numOutputs is the number of output units. inputToOutput (and other binary options) is either 0 or 1; if it is 1, all input units are connected to all output units. If biasOutput is 1, all output units are biased.
@@ -116,16 +116,16 @@ One could instead wrap the second term of the state formula (the summation in Eq
 It is optional and unnecessary to cache values and update traces and extended traces if the network's weights will never be adjusted again. Other optimizations are possible (see Library).
 
 (paraphrased from Monner) XLBP's PiLayer allows connections to be gated by multiple units. The normal case is for PiLayer to have two inputs: the source of the connection and its gater. PiLayer avoids this distinction, since the source and gater activations are mathematically interchangeable. A PiLayer with three inputs (for example) is like having a source and two gates. You can look at how it does the math for calculating the error responsibilities and work backward from there to get the general equation. In the original case you have a connection from unit S gated by G1, and your error responsibility for each unit changes as follows (note the primes denoting derivatives):
-
+```
 error(S) *= f'(S) * f(G1)
 error(G1) *= f(S) * f'(G1)
-
+```
 Expanding to the two-gate case:
-
+```
 error(S) *= f'(S) * f(G1) * f(G2)
 error(G1) *= f(S) * f'(G1) * f(G2)
 error(G2) *= f(S) * f(G1) * f'(G2)
-
+```
 So every error responsibility for each unit gets multiplied by the product of all the other units, except itself, where it instead gets multiplied by the derivative.
 
 *** Other Omissions from the Paper ***
