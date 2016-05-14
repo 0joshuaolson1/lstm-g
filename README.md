@@ -51,7 +51,7 @@ memoryBlock, receiveInput, sendToOutput, biased
 [toBlock, fromBlock, connectionType]
 [firstBlockInLayer, layerSize]
 ```
-Each line after the first represents any number of unordered consecutive lines of the same format, and the same freedoms of blank lines and whitespace as in manual building apply here. Memory blocks are numbered from 0 to (number of blocks - 1) by the order that their units are activated (see the fourth line's explanation for the exception to this). All connections from units to themselves have weights of 1, and non-self-connections have randomized weights in the range [-0.1, 0.1] (the paper uses [-0.1, 0.1) for its experiments, but Python's pseudorandom floats are documented as inclusive).
+Each line after the first represents any number of unordered consecutive lines of the same format, and the same freedoms of blank lines and whitespace as in manual building apply here. Memory blocks are numbered from 0 to (number of blocks - 1) by the order that their units are activated (see the fourth line's explanation for the exception to this). All connections from units to themselves have weights of 1, and non-self-connections have randomized weights in the range \[-0.1, 0.1\] (the paper uses [-0.1, 0.1) for its experiments, but Python's pseudorandom floats are documented as inclusive).
 
 In the first line, numInputs is the number of input units (unless there is a bias unit - see the last paragraph of this section), and numOutputs is the number of output units. inputToOutput (and other binary options) is either 0 or 1; if it is 1, all input units are connected to all output units. If biasOutput is 1, all output units are biased.
 
