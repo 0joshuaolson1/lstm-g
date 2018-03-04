@@ -18,7 +18,15 @@ D. Monner and J.A. Reggia (2012). A generalized LSTM-like training algorithm for
 
 Note that some languages may have more than one way to convert floating point numbers to strings. Some ways may not retain enough precision to give the same value when turned back into a number. In this library's code, the repr method is used instead of the str method when randomizing weights for automatic building (see Usage - Automatic Building) and in the toString method (see Usage - API).
 
-I started a C utility (https://github.com/MrMormon/lstm-g-hardcoder) that generates C/C++ headers with hardcoded networks for maximum platform-independent efficiency. The computational complexity is being improved over the loop-heavy methods used here, and calculated values are reused where possible. Maybe someone can try parallelizing it or utilizing cache memory or GPUs (although possible speedup is architecture-dependent). Or try other ideas, such as using tables of precomputed, interpolated activation function approximations, extending LSTM-g in ways that LSTM has been modified, or even getting a network working on an FPGA or neurocomputer...
+There are many optimizations that 'real' code (not the broken stuff in this repo) could try:
+- hard-code/metaprogram networks for training then again for using
+- less loop-heavy methods
+- reuse calculated values where possible
+- parallelization
+- cache and storage IO friendliness
+- port to GPUs, neurocomputers, FPGAs/ASICs
+- consider tables of precomputed, interpolated activation function approximations
+- follow other LSTM publications/projects for ideas how to similarly modify or add on to LSTM-g
 
 *** Usage - Manual Building ***
 
