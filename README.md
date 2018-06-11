@@ -1,6 +1,21 @@
+# LSTM-g
+
 THIS LIBRARY IS INCORRECTLY WRITTEN AND YOU SHOULD USE https://github.com/cazala/synaptic INSTEAD (it works and is maintained). Specifically, The XOR and Distracted Sequence Recall examples (which I'm not sure are right) show that it doesn't perform as expected. Those who want to try debugging this can find each other through the public Generalized LSTM contact page (https://docs.google.com/document/d/1NVQKHK-fkigwzXcusX8EZaw-LvP-TJAQdhrN6ts_ORo/edit). There you'll also find notes on stuff like ideas and LSTM-g-related papers. For anyone who wants to write their own XOR test, see XLBP's example/SequentialParity.java.
 
-*** Introduction ***
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Library](#library)
+- [Usage](#usage)
+  - [Manual Building](#usage---manual-building)
+  - [Automatic Building](#usage---automatic-building)
+  - [API](#usage---api)
+- [Architectures](#architectures)
+- [Algorithm](#algorithms)
+- [Missing Features](#missing-features)
+- [Other Omissions from the Paper](#other-omissions-from-the-paper)
+
+## Introduction
 
 LSTM-g stands for Generalized Long Short-Term Memory. LSTM is a class of recurrent neural network architectures (and their associated learning algorithm) with a large amount of empirical support for its ability to efficiently learn and generalize despite noise in and arbitrarily long time lags between relevant inputs, and on several problems for which other network types fail. See "Long Short-Term Memory in Recurrent Neural Networks" (http://www.felixgers.de/papers/phd.pdf) for a comprehensive overview of the state-of-the-art model. For a terser explanation, see chapters 3 and 4 of "Data Mining, Fraud Detection and Mobile Telecommunications: Call Pattern Analysis with Unsupervised Neural Networks" (http://etd.uwc.ac.za/xmlui/bitstream/handle/11394/249/Abidogun_MSC_2005.pdf).
 
@@ -8,7 +23,7 @@ In 2012, Derek Monner published "A generalized LSTM-like training algorithm for 
 
 An added benefit of the learning algorithm is that it remains spacially and temporally local like traditional LSTM: unlike Back-Propagation Through Time, Real-Time Recurrent Learning, Decoupled Extended Kalman Filters, Evolino, and other alternative LSTM training methods, weight changes only depend on information in the spacial neighborhood of each connection and since the previous time step. This locality gives the same or better complexity than any known alternatives (O(S_j) per time step and weight, where S_j is the number of memory cells in memory block j). It also gives a measure of physical plausibility, for those who may be interested in trying to draw conclusions about biological brains from LSTM experiments.
 
-*** Library ***
+## Library
 
 The code in this library is written in Python version 2, the old, stable branch of one of the easiest and most readable programming languages in wide use. It is intended to be a more accessible reference than Monner's Java implementation, XLBP (https://bitbucket.org/dmonner/xlbp/src), and as such has been optimized for readability and brevity, not speed. This also means that the library's methods do not check for erroneous/nonsensical parameters or usage, so read this readme carefully. Note that this has not yet been tested for identical weight changes to complex XLBP networks; no correctness is promised until then. Past communication with Monner has revealed several details that are not in or obvious from the paper.
 
@@ -28,7 +43,9 @@ There are many optimizations that 'real' code (not the broken stuff in this repo
 - consider tables of precomputed, interpolated activation function approximations
 - follow other LSTM publications/projects for ideas how to similarly modify or add on to LSTM-g
 
-*** Usage - Manual Building ***
+## Usage
+
+### Usage - Manual Building
 
 The class constructor LSTM_g(specString) takes a string in comma-separated values (csv) format, defining the number of input and output units, the connections between input, output, and hidden units, and the current weights and gating units of those connections. For a network that has been previously built and run, the states, eligibility traces, and extended eligibility traces can also be defined (normally taken from strings from the toString method - see Usage - API):
 ```
@@ -50,7 +67,7 @@ In the fourth line, t is the trace for the connection from i to j, where i does 
 
 In the fifth line, e is the extended trace for the combination of j, i, and k such that there is a connection from i to j, i does not equal j, j gates a connection from some unit to k, and k is activated after j.
 
-*** Usage - Automatic Building ***
+### Usage - Automatic Building
 
 The constructor also takes a csv string of the following high-level format, defining a new network with connections between input units, an optional bias unit, memory blocks, and output units. In addition, layer groupings can be specified in order to change the order of activation of units in adjacent memory blocks to match that of LSTM:
 ```
@@ -71,7 +88,7 @@ In the fourth line, firstBlockInLayer and the next (layerSize - 1) memory blocks
 
 If any memory blocks or the output units are biased, numInputs is not technically the number of input units. The last "input unit" is a bias unit. It receives its activation from the last entry of input lists (see the step method in Usage - API).
 
-*** Usage - API ***
+### Usage - API
 
 toString(newNetwork[, newline]) returns a string of the format used in manual building, except there are no blank lines, the only non-line-separator whitespace is a single space after each comma, and consecutive lines of the same format are sorted in ascending order, first by j, then by i, then by k (where applicable). If newNetwork is True, the states, traces, and extended traces are not included. Unless the newline string is given, the operating system's default line separator is used.
 
@@ -83,7 +100,7 @@ learn(targets[, learningRate]) adjusts the network's weights using the most rece
 
 Call the step method at least once before calling the learn method; input unit activations are not provided by the class constructor (see Usage - Manual Building) and are undefined until they are given input data. Also, some values used in the learn method are stored during the step method. Training works by calling the step method one or more times (possible because the information used to calculate weight changes is updated every time step) and then calling the learn method exactly once. There is no reason to call the learn method twice in a row, and the second time would use the wrong weights in its calculations.
 
-*** Architectures ***
+## Architectures
 
 LSTM-g is a mathematically exact generalization of LSTM with forget gates. This means that despite the complete flexibility of connectivity and gating that is now possible, the methods of activation propagation and weight adjustment are designed for LSTM-like architectures. Self-connected units, their biases, and input and output units have special treatment (see Algorithm). The learning algorithm assumes that no unit gates its own self-connection and that self-connection weights are a constant 1.
 
@@ -91,9 +108,9 @@ Still, the network specification format in Usage - Automatic Building allows onl
 
 Of course, one is free to try less conventional architectures (or modifications to the algorithm); what is important in practice is learning speed, success at generalization from experience, robustness to noisy input and long time lags, and the performance-to-computation ratio. LSTM-g can also train classic recurrent networks, and other concepts from artificial neural networks, such as bagging, boosting, and learning rate decay/alpha stepping, are not dependent on the type of network.
 
-*** Algorithm ***
+## Algorithm
 
-Algorithm.png contains most of the paper's details about how LSTM-g networks work, but neither the image nor the paper mention everything. This section is supplementary and hopefully understandable to those unfamiliar with neural networks; much of this is restating the paper's equations in words.
+[Algorithm.png](https://github.com/0joshuaolson1/lstm-g/blob/master/Algorithm.png) contains most of the paper's details about how LSTM-g networks work, but neither the image nor the paper mention everything. This section is supplementary and hopefully understandable to those unfamiliar with neural networks; much of this is restating the paper's equations in words.
 
 A network consists of connected units: one or more input units, zero or more hidden units, and one or more output units. Each unit is referred to or indexed by a number, and the units have a fixed order of activation (see the next paragraph) over those numbers; input units are activated first, and output units are activated last. Each unit has a state, an activation, and a nonlinear, everywhere-differentiable function from states to activations called an activation function, with the exception of input units, which only need an activation. A connection is directed; that is, it is an output or outgoing connection for the sending unit and an input or incoming connection for the receiving unit. A connection has a weight, a gain, and may additionally be gated by a unit associated with it called the gating unit or gater. A connection's gain is a constant 1 if it is ungated, and equal to the most recent gater activation otherwise (Eq. 14 in the paper).
 
@@ -115,7 +132,7 @@ Biases, specifically bias connections from bias units to other units, are treate
 
 In Monner's experience, alternatives to the basic weight updating function like momentum and batch training/offline learning are not very useful; LSTM seems to be close to optimal on its own.
 
-*** Missing Features ***
+## Missing Features
 
 The only activation function used in the code is the classic logistic sigmoid, with a range of (0, 1). Units do not have to share the same activation function, but the activation functions of output units must still have a range of (0, 1). Furthermore, LSTM memory cells actually have two activation functions: the input and output squashing functions. The paper takes all input squashing functions to be the identity and simply refers to output squashing functions as activation functions, but they can be manually added to any network in the following way. Insert a unit (with the desired activation function) between the memory cell and what used to be its direct inputs (excluding the self-connection, which remains unchanged). The memory cell's input gate gates the single connection between the input squashing unit and the memory cell, instead of gating the memory cell's former inputs.
 
@@ -136,7 +153,7 @@ error(G2) *= f(S) * f(G1) * f'(G2)
 ```
 So every error responsibility for each unit gets multiplied by the product of all the other units, except itself, where it instead gets multiplied by the derivative.
 
-*** Other Omissions from the Paper ***
+## Other Omissions from the Paper
 
 All non-input units in the experiments in the paper were biased with a constant value of 1, and these bias connections were not included in the reported numbers of weights (nor were self-connections, for that matter).
 
