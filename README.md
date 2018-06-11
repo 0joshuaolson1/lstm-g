@@ -11,7 +11,7 @@ THIS LIBRARY IS INCORRECTLY WRITTEN AND YOU SHOULD USE https://github.com/cazala
   - [Automatic Building](#usage---automatic-building)
   - [API](#usage---api)
 - [Architectures](#architectures)
-- [Algorithm](#algorithms)
+- [Algorithm](#algorithm)
 - [Missing Features](#missing-features)
 - [Other Omissions from the Paper](#other-omissions-from-the-paper)
 
